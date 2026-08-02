@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AppCash</string>
+    <string name="login_title">AppCash Login</string>
+    <string name="role_admin">Admin</string>
+    <string name="role_user">Siswa</string>
+    <string name="username_label">Username</string>
+    <string name="password_label">Password</string>
+    <string name="member_id_label">NIS / Member ID</string>
+    <string name="login_button">Masuk</string>
+    <string name="logout_button">Keluar</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="members">Anggota</string>
+    <string name="payments">Kas</string>
+    <string name="donations">Donasi</string>
+    <string name="levies">Pungutan</string>
+    <string name="more">Lainnya</string>
+    <string name="fines">Denda</string>
+    <string name="expenses">Pengeluaran</string>
+    <string name="config">Konfigurasi</string>
+    <string name="security">Keamanan</string>
+    <string name="loading">Memuat...</string>
+    <string name="error_generic">Terjadi kesalahan</string>
+    <string name="retry">Coba lagi</string>
+    <string name="add">Tambah</string>
+    <string name="delete">Hapus</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="confirm_delete">Konfirmasi hapus?</string>
+    <string name="yes">Ya</string>
+    <string name="no">Tidak</string>
+    <string name="total_balance">Saldo Total</string>
+    <string name="kas_amount">Iuran Kas</string>
+    <string name="total_kas_income">Total Pemasukan Kas</string>
+    <string name="total_donations">Total Donasi</string>
+    <string name="total_fines">Total Denda</string>
+    <string name="total_expenses">Total Pengeluaran</string>
+    <string name="unpaid_fines">Denda Belum Bayar</string>
+    <string name="paid_fines">Denda Lunas</string>
+    <string name="latest_paid">Pembayar Terbaru</string>
+    <string name="previous_balance">Saldo Sebelumnya</string>
+</resources>

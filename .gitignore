@@ -1,0 +1,43 @@
+# Gradle & Build Output
+.gradle/
+build/
+**/build/
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+polyglot.gradle.xml
+
+# Local Configuration Files (SDK paths, keystores, environment)
+local.properties
+keystore.jks
+*.keystore
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# VS Code & Editor Files
+.vscode/
+.kiro/
+.gemini/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# OS / System Temporary Files
+*.log
+tmp/
+temp/
+p

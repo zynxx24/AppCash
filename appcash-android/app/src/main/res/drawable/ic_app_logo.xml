@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Green background with rounded corners -->
+    <path
+        android:fillColor="#00D632"
+        android:pathData="M 16,0 L 92,0 A 16,16 0 0 1 108,16 L 108,92 A 16,16 0 0 1 92,108 L 16,108 A 16,16 0 0 1 0,92 L 0,16 A 16,16 0 0 1 16,0 Z" />
+    
+    <!-- Bold White Dollar Sign ($) -->
+    <!-- Vertical Top Bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 50,18 L 58,18 L 58,32 L 50,32 Z" />
+    
+    <!-- Vertical Bottom Bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 50,76 L 58,76 L 58,90 L 50,90 Z" />
+    
+    <!-- Smooth Bold S-Curve of Dollar Sign -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 72.5,35 C 72.5,28 66,24.5 54,24.5 C 41.5,24.5 35,29 35,37.5 C 35,45.5 42,48.5 55,51.5 C 68,54.5 74.5,58 74.5,67 C 74.5,76.5 67,81.5 54,81.5 C 40,81.5 33,76 33,67 L 42.5,67 C 42.5,71.5 46.5,74 54,74 C 61.5,74 65.5,71 65.5,66.5 C 65.5,61 60,58.5 47,55.5 C 34,52.5 25.5,47.5 25.5,37.5 C 25.5,26.5 35.5,17 54,17 C 71.5,17 81.5,26 81.5,35 L 72.5,35 Z" />
+</vector>
