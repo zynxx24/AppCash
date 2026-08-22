@@ -11,11 +11,13 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
@@ -158,6 +160,7 @@ fun MainContent(repository: AppCashRepository) {
                 2 -> DashboardScreen(repository = repository, isAdmin = isAdmin)
                 3 -> ScheduleScreen()
                 4 -> MembersScreen(repository = repository)
+                5 -> PaymentInputScreen(repository = repository)
             }
         }
     }
@@ -175,5 +178,6 @@ val bottomNavItems = listOf(
     ScreenItem("expenses", "Pengeluaran",Icons.Outlined.Info,         Icons.Filled.Info),
     ScreenItem("dashboard","Dashboard",  Icons.Outlined.Home,         Icons.Filled.Home),
     ScreenItem("schedule", "Jadwal",     Icons.Outlined.DateRange,    Icons.Filled.DateRange),
-    ScreenItem("members",  "Anggota",    Icons.Outlined.Person,       Icons.Filled.Person)
+    ScreenItem("members",  "Anggota",    Icons.Outlined.Person,       Icons.Filled.Person),
+    ScreenItem("input",    "Input Kas",  Icons.Outlined.Edit,         Icons.Filled.Edit)
 )

@@ -9,26 +9,39 @@ class AppCashRepository(private val context: Context) {
 
     // --- IN-MEMORY STANDALONE DATABASE (XII PPLG) ---
     private val membersList = mutableListOf(
-        Member(1,  "Gede Agus Wira Darma Putra",     "2026-PPLG-006", "Ketua Kelas",  "Android & Web Full-Stack Developer, pemimpin kelas XII PPLG yang visioner", "17 Tahun", "6285600487433", "https://i.pravatar.cc/150?img=11"),
-        Member(2,  "I Putu Pande Andika",            "2026-PPLG-014", "Wakil Ketua", "Front-end Enthusiast & Koordinator Kegiatan Kelas", "17 Tahun", "6281234567802", "https://i.pravatar.cc/150?img=45"),
-        Member(3,  "Ni Kadek Adelia Kencana Putri",  "2026-PPLG-022", "Bendahara 1", "Pengelola Kas Kelas XII PPLG & UI/UX Designer", "16 Tahun", "6281234567803", "https://i.pravatar.cc/150?img=12"),
-        Member(4,  "Putu Bayu Satria Wangsa Bukian", "2026-PPLG-030", "Bendahara 2", "Manajemen Keuangan & Data Analyst PPLG", "16 Tahun", "6281234567804", "https://i.pravatar.cc/150?img=9"),
-        Member(5,  "Putu Ari Kusuma",                "2026-PPLG-004", "Sekretaris 1","Technical Writer & Documenter Kelompok PPLG", "17 Tahun", "6281234567805", "https://i.pravatar.cc/150?img=33"),
-        Member(6,  "Ni Made Trisna Dewi",            "2026-PPLG-005", "Sekretaris 2","Graphic Designer & Illustrator Digital Kelas", "16 Tahun", "6281234567806", "https://i.pravatar.cc/150?img=44"),
-        Member(7,  "Komang Adi Pratama",             "2026-PPLG-006", "Anggota",     "Backend Developer & Database Architect", "17 Tahun", "6281234567807", "https://i.pravatar.cc/150?img=53"),
-        Member(8,  "Gede Surya Mahendra",            "2026-PPLG-007", "Anggota",     "Mobile Developer Android & iOS Enthusiast", "17 Tahun", "6281234567808", "https://i.pravatar.cc/150?img=57"),
-        Member(9,  "Ni Putu Ayu Lestari",            "2026-PPLG-008", "Anggota",     "Frontend React & Next.js Developer", "16 Tahun", "6281234567809", "https://i.pravatar.cc/150?img=32"),
-        Member(10, "Made Agus Darmasaputra",         "2026-PPLG-009", "Anggota",     "DevOps & System Administrator PPLG", "17 Tahun", "6281234567810", "https://i.pravatar.cc/150?img=60"),
-        Member(11, "Kadek Rani Puspita",             "2026-PPLG-010", "Anggota",     "QA Engineer & Automated Testing Specialist", "16 Tahun", "6281234567811", "https://i.pravatar.cc/150?img=26"),
-        Member(12, "Gede Eka Wiryawan",              "2026-PPLG-011", "Anggota",     "Game Developer & Unity 3D Programmer", "17 Tahun", "6281234567812", "https://i.pravatar.cc/150?img=68"),
-        Member(13, "Ni Ketut Maya Sari",             "2026-PPLG-012", "Anggota",     "Cyber Security & Network Engineering", "16 Tahun", "6281234567813", "https://i.pravatar.cc/150?img=47"),
-        Member(14, "Wayan Bagas Saputra",            "2026-PPLG-013", "Anggota",     "IoT & Embedded System Developer", "17 Tahun", "6281234567814", "https://i.pravatar.cc/150?img=15"),
-        Member(15, "Ni Wayan Eka Puspawati",         "2026-PPLG-014", "Anggota",     "Content Creator & Social Media PPLG", "16 Tahun", "6281234567815", "https://i.pravatar.cc/150?img=25"),
-        Member(16, "Putu Dewa Nugraha",              "2026-PPLG-015", "Anggota",     "Cloud Computing & API Developer", "17 Tahun", "6281234567816", "https://i.pravatar.cc/150?img=65"),
-        Member(17, "Kadek Yogi Wahyudi",             "2026-PPLG-016", "Anggota",     "Machine Learning & AI Enthusiast", "17 Tahun", "6281234567817", "https://i.pravatar.cc/150?img=52"),
-        Member(18, "Ni Made Putri Cahyani",          "2026-PPLG-017", "Anggota",     "Web Designer & Figma Expert", "16 Tahun", "6281234567818", "https://i.pravatar.cc/150?img=36"),
-        Member(19, "Gede Arya Pramana",              "2026-PPLG-018", "Anggota",     "Database Administrator & SQL Expert", "17 Tahun", "6281234567819", "https://i.pravatar.cc/150?img=63"),
-        Member(20, "Ni Luh Komang Artini",           "2026-PPLG-019", "Anggota",     "Fullstack PHP & Laravel Developer", "16 Tahun", "6281234567820", "https://i.pravatar.cc/150?img=29")
+        Member(1,  "Boyke Vilano Hamonangan Sihite",          "2026-PPLG-001", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(2,  "Bintang Leonita Christya Renata",         "2026-PPLG-002", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(3,  "Carolina Timuthy Janggur",                "2026-PPLG-003", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(4,  "Dewa Gede Dalem Oka Adnyana Sandi",      "2026-PPLG-004", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(5,  "Galistan Ramadhan Kurnia Taunaes",        "2026-PPLG-005", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(6,  "Gede Agus Wira Darma Putra",              "2026-PPLG-006", "Ketua Kelas",  "Android & Web Full-Stack Developer, pemimpin kelas XII PPLG yang visioner", "17 Tahun", "6285600487433", ""),
+        Member(7,  "I Gede Abi Wirya Dinata",                 "2026-PPLG-007", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(8,  "I Gede Darma Suptiawan",                  "2026-PPLG-008", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(9,  "I Komang Raditya Putra",                  "2026-PPLG-009", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(10, "I Komang Riski Setiawan",                 "2026-PPLG-010", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(11, "I Nyoman Gede Arta Wiguna",               "2026-PPLG-011", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(12, "I Putu Dika Laksmana Putra",              "2026-PPLG-012", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(13, "I Putu Ditya Artha Wijaya",               "2026-PPLG-013", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(14, "I Putu Pande Andika",                     "2026-PPLG-014", "Bendahara 2",  "Manajemen Keuangan & Data Analyst PPLG", "16 Tahun", "", ""),
+        Member(15, "I Putu Suyoga Mahendra",                  "2026-PPLG-015", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(16, "I Wayan Bagus Putrawan",                  "2026-PPLG-016", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(17, "I Wayan Pasek Kevin Ariadi",              "2026-PPLG-017", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(18, "Kadek Yuda Prasetya",                     "2026-PPLG-018", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(19, "Kadek Yuni Callista Putri Dewi",          "2026-PPLG-019", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(20, "Komang Diah Putri Pratiwi",               "2026-PPLG-020", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(21, "Luh Ria Mirasih",                         "2026-PPLG-021", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(22, "Ni Kadek Adelia Cahya Kencana Putri",     "2026-PPLG-022", "Bendahara 1",  "Pengelola Kas Kelas XII PPLG & UI/UX Designer", "16 Tahun", "", ""),
+        Member(23, "Ni Kadek Lina Antika Dewi",               "2026-PPLG-023", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(24, "Ni Komang Kirana Paramita Ardanari",      "2026-PPLG-024", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(25, "Ni Komang Septiarini",                    "2026-PPLG-025", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(26, "Ni Luh Putu Kesya Astri Melani",          "2026-PPLG-026", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(27, "Ni Putu Cahaya Lestari Dewi",             "2026-PPLG-027", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(28, "Ni Putu Intan Lestari Darmayanti",        "2026-PPLG-028", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(29, "Okta Pradipta Attala Dzaki",              "2026-PPLG-029", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(30, "Putu Bayu Satria Wangsa Bukian",          "2026-PPLG-030", "Wakil Ketua",  "Front-end Enthusiast & Koordinator Kegiatan Kelas", "17 Tahun", "", ""),
+        Member(31, "Putu Nanda Lindia Maharani",              "2026-PPLG-031", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(32, "Putu Putri Cahyani",                      "2026-PPLG-032", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
+        Member(33, "Raditya Rondi",                           "2026-PPLG-033", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", "")
     )
 
     // 20 Mingguan Kas (Januari - Mei 2026)
@@ -55,6 +68,9 @@ class AppCashRepository(private val context: Context) {
         Expense(10,"Konsumsi Perayaan Kelulusan Ujian Akhir XII PPLG",   250000,"2026-05-10", "Kegiatan")
     )
 
+    // Payment history for new payment input feature
+    private val paymentHistoryList = mutableListOf<PaymentRecord>()
+
     private var configData = Config(
         kasAmount       = 5000,
         previousBalance = 500000,
@@ -70,7 +86,7 @@ class AppCashRepository(private val context: Context) {
                 val isPaid = when {
                     index < 16 -> true
                     index < 18 -> member.id % 2 == 1 || member.id <= 12
-                    else       -> member.id in listOf(1, 2, 3, 4, 5, 7, 9, 11)
+                    else       -> member.id in listOf(1, 2, 3, 4, 5, 6, 7, 9, 11, 14, 22, 30)
                 }
                 memberMap[date] = isPaid
             }
@@ -187,5 +203,18 @@ class AppCashRepository(private val context: Context) {
             year            = req.year ?: configData.year
         )
         Result.success(Unit)
+    }
+
+    // --- Payment Input Feature ---
+    suspend fun addPaymentRecord(memberId: Int, amount: Int, date: String, note: String): Result<PaymentRecord> = withContext(Dispatchers.IO) {
+        val member = membersList.find { it.id == memberId } ?: return@withContext Result.failure(Exception("Member not found"))
+        val newId = (paymentHistoryList.maxOfOrNull { it.id } ?: 0) + 1
+        val record = PaymentRecord(id = newId, memberId = memberId, memberName = member.name, amount = amount, date = date, note = note)
+        paymentHistoryList.add(0, record)
+        Result.success(record)
+    }
+
+    suspend fun getPaymentHistory(): Result<List<PaymentRecord>> = withContext(Dispatchers.IO) {
+        Result.success(paymentHistoryList.toList())
     }
 }

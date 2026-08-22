@@ -104,3 +104,13 @@ data class ConfigRequest(
     @SerializedName("class_name") val className: String? = null,
     val year: String? = null
 )
+
+data class PaymentRecord(
+    val id: Int,
+    @SerializedName("member_id") val memberId: Int,
+    @SerializedName("member_name") val memberName: String,
+    val amount: Int,
+    val date: String,
+    val note: String = "",
+    val type: String = "Kas"
+)
