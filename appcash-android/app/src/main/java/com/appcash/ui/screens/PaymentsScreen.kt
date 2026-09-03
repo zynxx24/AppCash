@@ -37,9 +37,11 @@ import androidx.compose.ui.unit.dp
 import com.appcash.R
 import com.appcash.data.model.*
 import com.appcash.data.repository.AppCashRepository
+import androidx.compose.foundation.clickable
 import com.appcash.ui.theme.OrangeDark
 import com.appcash.ui.theme.OrangeLight
 import com.appcash.ui.theme.OrangePrimary
+import com.appcash.ui.theme.TextMedium
 import kotlinx.coroutines.launch
 
 @Composable
@@ -51,6 +53,8 @@ fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
     var loading by remember { mutableStateOf(true) }
     var showEdit by remember { mutableStateOf(false) }
     var showBniPayment by remember { mutableStateOf(false) }
+    var selectedWeekDate by remember { mutableStateOf<String?>(null) }
+    var selectedWeekIndex by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
@@ -284,6 +288,10 @@ fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
                                     paidCount = paidCount,
                                     totalMembers = members.size,
                                     isAdmin = isAdmin,
+                                    onClick = {
+                                        selectedWeekIndex = idx + 1
+                                        selectedWeekDate = date
+                                    },
                                     onEdit = { showEdit = true }
                                 )
                             }
@@ -292,6 +300,17 @@ fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
                     }
                 }
             }
+        }
+
+        // Week Detail Dialog (Who paid / hasn't paid)
+        if (selectedWeekDate != null && payments != null) {
+            WeekDetailDialog(
+                weekIndex = selectedWeekIndex,
+                date = selectedWeekDate!!,
+                members = members,
+                records = payments!!.records,
+                onDismiss = { selectedWeekDate = null }
+            )
         }
         SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter))
     }
@@ -304,6 +323,7 @@ fun PaymentDateCard(
     paidCount: Int,
     totalMembers: Int,
     isAdmin: Boolean,
+    onClick: () -> Unit,
     onEdit: () -> Unit
 ) {
     Box(
@@ -315,6 +335,7 @@ fun PaymentDateCard(
                     colors = listOf(OrangePrimary, OrangeLight)
                 )
             )
+            .clickable { onClick() }
             .padding(16.dp)
     ) {
         Column {
@@ -380,7 +401,19 @@ fun BniPaymentDialog(
     val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true }
     val selectedDates = remember { mutableStateMapOf<String, Boolean>() }
     val selectedCount = selectedDates.count { it.value }
-    val totalAmount = selectedCount * 5000
+    val baseKasAmount = selectedCount * 5000
+
+    var memberDendaInfo by remember { mutableStateOf<com.appcash.data.model.DendaInfo?>(null) }
+    LaunchedEffect(selectedMemberId) {
+        // Simple denda estimate for member
+        val repository = AppCashRepository(context)
+        repository.getDendaForMember(selectedMemberId).onSuccess { info ->
+            memberDendaInfo = info
+        }
+    }
+
+    val dendaAmount = if (selectedCount > 0) (memberDendaInfo?.dendaAmount ?: 0) else 0
+    val totalAmount = baseKasAmount + dendaAmount
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -543,15 +576,36 @@ fun BniPaymentDialog(
 
                 Divider()
 
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text("Total Transfer:", fontWeight = FontWeight.Bold)
-                    Text("Rp ${formatRupiah(totalAmount)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = OrangePrimary)
+                // Payment Breakdown (Kas + Denda)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = OrangePrimary.copy(alpha = 0.05f))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text("Kas ($selectedCount minggu):", style = MaterialTheme.typography.bodySmall, color = TextMedium)
+                            Text("Rp ${formatRupiah(baseKasAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                        }
+                        if (dendaAmount > 0) {
+                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                Text("Denda Keterlambatan:", style = MaterialTheme.typography.bodySmall, color = com.appcash.ui.theme.RedNegative, fontWeight = FontWeight.SemiBold)
+                                Text("Rp ${formatRupiah(dendaAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = com.appcash.ui.theme.RedNegative)
+                            }
+                        }
+                        Divider(modifier = Modifier.padding(vertical = 4.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text("Total Transfer:", fontWeight = FontWeight.Bold)
+                            Text("Rp ${formatRupiah(totalAmount)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = OrangePrimary)
+                        }
+                    }
                 }
 
                 Button(
                     onClick = {
                         val memberName = selectedMember?.name ?: "Siswa"
-                        val message = "Halo Admin Kas XII PPLG, saya $memberName telah transfer iuran kas via BNI 1892077413 sebesar Rp ${formatRupiah(totalAmount)} ($selectedCount minggu). Mohon konfirmasi."
+                        val dendaText = if (dendaAmount > 0) " (termasuk denda Rp ${formatRupiah(dendaAmount)})" else ""
+                        val message = "Halo Admin Kas XII PPLG, saya $memberName telah transfer iuran kas via BNI 1892077413 sebesar Rp ${formatRupiah(totalAmount)} ($selectedCount minggu$dendaText). Mohon konfirmasi."
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=6285600487433&text=${Uri.encode(message)}"))
                         try { context.startActivity(intent) } catch (e: Exception) {
                             Toast.makeText(context, "Membuka WhatsApp Admin...", Toast.LENGTH_SHORT).show()
@@ -611,14 +665,24 @@ fun EditPaymentsDialog(wrapper: PaymentsWrapper, members: List<Member>, onDismis
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
-                        value = newDate, onValueChange = { newDate = it },
-                        label = { Text("Tambah Tanggal") },
+                        value = newDate,
+                        onValueChange = { newVal ->
+                            val digitsOnly = newVal.filter { c -> c.isDigit() }
+                            if (digitsOnly.length <= 8) newDate = digitsOnly
+                        },
+                        label = { Text("Tambah Tanggal (YYYYMMDD)") },
+                        placeholder = { Text("20260904") },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary),
+                        singleLine = true,
+                        visualTransformation = DateVisualTransformation()
                     )
                     Button(
-                        onClick = { if (newDate.isNotBlank() && !dates.contains(newDate)) { dates.add(newDate); newDate = "" } },
+                        onClick = {
+                            val formattedDate = if (newDate.length == 8) "M${dates.size + 1} (${newDate.substring(6,8)} ${newDate.substring(4,6)})" else newDate
+                            if (newDate.isNotBlank() && !dates.contains(formattedDate)) { dates.add(formattedDate); newDate = "" }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                         shape = RoundedCornerShape(10.dp)
                     ) { Text("+") }
@@ -649,6 +713,99 @@ fun EditPaymentsDialog(wrapper: PaymentsWrapper, members: List<Member>, onDismis
             }, colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary), shape = RoundedCornerShape(10.dp)) { Text("Simpan", fontWeight = FontWeight.Bold) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Batal", color = OrangePrimary) } }
+    )
+}
+
+@Composable
+fun WeekDetailDialog(
+    weekIndex: Int,
+    date: String,
+    members: List<Member>,
+    records: Map<String, Map<String, Boolean>>,
+    onDismiss: () -> Unit
+) {
+    val paidCount = members.count { member -> records[member.id.toString()]?.get(date) == true }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Column {
+                Text(
+                    "Minggu ke-$weekIndex ($date)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = OrangePrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = OrangePrimary.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        "$paidCount / ${members.size} Anggota Sudah Bayar",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OrangePrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 350.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                members.forEach { member ->
+                    val isPaid = records[member.id.toString()]?.get(date) == true
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isPaid) com.appcash.ui.theme.GreenPositive.copy(alpha = 0.08f) else com.appcash.ui.theme.RedNegative.copy(alpha = 0.06f))
+                            .padding(10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            member.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isPaid) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isPaid) com.appcash.ui.theme.GreenPositive else com.appcash.ui.theme.RedNegative.copy(alpha = 0.2f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    if (isPaid) "✓ Lunas" else "✗ Belum",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isPaid) Color.White else com.appcash.ui.theme.RedNegative,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Tutup", fontWeight = FontWeight.Bold)
+            }
+        }
     )
 }
 

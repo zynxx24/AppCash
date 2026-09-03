@@ -4,6 +4,8 @@ import android.content.Context
 import com.appcash.data.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class AppCashRepository(private val context: Context) {
 
@@ -202,33 +204,59 @@ class AppCashRepository(private val context: Context) {
     }
 
     // --- DENDA (PENALTY) CALCULATION ---
-    // 5% per month of unpaid kas
+    // 5% per month based on device date vs payment due date
+
+    private val monthMap = mapOf(
+        "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4,
+        "Mei" to 5, "Jun" to 6, "Jul" to 7, "Ags" to 8,
+        "Sep" to 9, "Okt" to 10, "Nov" to 11, "Des" to 12
+    )
+
+    /**
+     * Parse date label like "M01 (05 Jan)" → LocalDate(2026, 1, 5)
+     */
+    private fun parseDateLabel(label: String): LocalDate? {
+        val regex = Regex("""\((\d{2})\s+(\w+)\)""")
+        val match = regex.find(label) ?: return null
+        val day = match.groupValues[1].toIntOrNull() ?: return null
+        val monthStr = match.groupValues[2]
+        val month = monthMap[monthStr] ?: return null
+        return try { LocalDate.of(2026, month, day) } catch (e: Exception) { null }
+    }
+
     suspend fun getDendaForAllMembers(): Result<List<DendaInfo>> = withContext(Dispatchers.IO) {
         val dendaList = mutableListOf<DendaInfo>()
         val kasPerWeek = configData.kasAmount
+        val today = LocalDate.now()
 
         membersList.forEach { member ->
             val memberPayments = paymentRecords[member.id.toString()] ?: emptyMap()
-            var unpaidMonths = 0
+            var totalDendaAmount = 0
+            var unpaidMonthsCount = 0
+            val unpaidMonthsSet = mutableSetOf<Int>()
 
-            monthlyGroups.forEach { (_, weeks) ->
-                val unpaidWeeksInMonth = weeks.count { week -> memberPayments[week] != true }
-                if (unpaidWeeksInMonth > 0) {
-                    unpaidMonths++
+            datesList.forEach { date ->
+                if (memberPayments[date] != true) {
+                    val dueDate = parseDateLabel(date)
+                    if (dueDate != null && today.isAfter(dueDate)) {
+                        val monthsLate = ChronoUnit.MONTHS.between(dueDate, today).toInt().coerceAtLeast(0)
+                        if (monthsLate > 0) {
+                            val dendaForWeek = (kasPerWeek * 5.0 * monthsLate / 100).toInt()
+                            totalDendaAmount += dendaForWeek
+                            unpaidMonthsSet.add(dueDate.monthValue)
+                        }
+                    }
                 }
             }
+            unpaidMonthsCount = unpaidMonthsSet.size
 
-            if (unpaidMonths > 0) {
-                val totalUnpaidWeeks = datesList.count { date -> memberPayments[date] != true }
-                val totalUnpaid = totalUnpaidWeeks * kasPerWeek
-                val dendaPct = unpaidMonths * 5.0  // 5% per month
-                val dendaAmount = (totalUnpaid * dendaPct / 100).toInt()
+            if (totalDendaAmount > 0) {
                 dendaList.add(DendaInfo(
                     memberId = member.id,
                     memberName = member.name,
-                    unpaidMonths = unpaidMonths,
-                    dendaPercentage = dendaPct,
-                    dendaAmount = dendaAmount
+                    unpaidMonths = unpaidMonthsCount,
+                    dendaPercentage = unpaidMonthsCount * 5.0,
+                    dendaAmount = totalDendaAmount
                 ))
             }
         }
@@ -240,26 +268,32 @@ class AppCashRepository(private val context: Context) {
             ?: return@withContext Result.failure(Exception("Member not found"))
         val memberPayments = paymentRecords[memberId.toString()] ?: emptyMap()
         val kasPerWeek = configData.kasAmount
-        var unpaidMonths = 0
+        val today = LocalDate.now()
 
-        monthlyGroups.forEach { (_, weeks) ->
-            val unpaidWeeksInMonth = weeks.count { week -> memberPayments[week] != true }
-            if (unpaidWeeksInMonth > 0) {
-                unpaidMonths++
+        var totalDendaAmount = 0
+        val unpaidMonthsSet = mutableSetOf<Int>()
+
+        datesList.forEach { date ->
+            if (memberPayments[date] != true) {
+                val dueDate = parseDateLabel(date)
+                if (dueDate != null && today.isAfter(dueDate)) {
+                    val monthsLate = ChronoUnit.MONTHS.between(dueDate, today).toInt().coerceAtLeast(0)
+                    if (monthsLate > 0) {
+                        val dendaForWeek = (kasPerWeek * 5.0 * monthsLate / 100).toInt()
+                        totalDendaAmount += dendaForWeek
+                        unpaidMonthsSet.add(dueDate.monthValue)
+                    }
+                }
             }
         }
 
-        if (unpaidMonths > 0) {
-            val totalUnpaidWeeks = datesList.count { date -> memberPayments[date] != true }
-            val totalUnpaid = totalUnpaidWeeks * kasPerWeek
-            val dendaPct = unpaidMonths * 5.0
-            val dendaAmount = (totalUnpaid * dendaPct / 100).toInt()
+        if (totalDendaAmount > 0) {
             Result.success(DendaInfo(
                 memberId = member.id,
                 memberName = member.name,
-                unpaidMonths = unpaidMonths,
-                dendaPercentage = dendaPct,
-                dendaAmount = dendaAmount
+                unpaidMonths = unpaidMonthsSet.size,
+                dendaPercentage = unpaidMonthsSet.size * 5.0,
+                dendaAmount = totalDendaAmount
             ))
         } else {
             Result.success(null)

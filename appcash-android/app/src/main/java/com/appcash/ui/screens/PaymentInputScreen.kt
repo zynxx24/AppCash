@@ -17,8 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.appcash.data.model.Member
 import com.appcash.data.model.PaymentRecord
@@ -26,6 +30,35 @@ import com.appcash.data.repository.AppCashRepository
 import com.appcash.ui.theme.OrangeLight
 import com.appcash.ui.theme.OrangePrimary
 import kotlinx.coroutines.launch
+
+/**
+ * VisualTransformation for date input: user types digits only,
+ * displayed as YYYY-MM-DD with auto-inserted dashes.
+ */
+class DateVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val digits = text.text
+        val out = StringBuilder()
+        digits.indices.forEach { i ->
+            val c = digits[i]
+            out.append(c)
+            if ((i == 3 || i == 5) && i < digits.length - 1) out.append('-')
+        }
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 4) return offset
+                if (offset <= 6) return offset + 1
+                return offset + 2
+            }
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 4) return offset
+                if (offset <= 7) return offset - 1
+                return offset - 2
+            }
+        }
+        return TransformedText(AnnotatedString(out.toString()), offsetMapping)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +71,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
     var selectedMemberId by remember { mutableIntStateOf(0) }
     var expandedMemberDropdown by remember { mutableStateOf(false) }
     var amountText by remember { mutableStateOf("5000") }
-    var dateText by remember { mutableStateOf("2026-08-22") }
+    var dateText by remember { mutableStateOf("20260904") }
     var noteText by remember { mutableStateOf("") }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -86,7 +119,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     DetailRow("Nama Anggota", selectedMember!!.name)
                     DetailRow("Jumlah", "Rp ${formatRupiah(amount)}")
-                    DetailRow("Tanggal", dateText)
+                    DetailRow("Tanggal", dateText.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d })
                     if (noteText.isNotBlank()) DetailRow("Keterangan", noteText)
                 }
             },
@@ -98,7 +131,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
                             repository.addPaymentRecord(
                                 memberId = selectedMemberId,
                                 amount = amount,
-                                date = dateText,
+                                date = dateText.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d },
                                 note = noteText.ifBlank { "Pembayaran Kas" }
                             ).fold(
                                 onSuccess = {
@@ -251,15 +284,31 @@ fun PaymentInputScreen(repository: AppCashRepository) {
                                     }
                                 )
 
-                                // Date Input
+                                // Date Input with auto-format
                                 OutlinedTextField(
                                     value = dateText,
-                                    onValueChange = { dateText = it },
-                                    label = { Text("Tanggal (YYYY-MM-DD)") },
+                                    onValueChange = { newVal ->
+                                        val digitsOnly = newVal.filter { c -> c.isDigit() }
+                                        if (digitsOnly.length <= 8) dateText = digitsOnly
+                                    },
+                                    label = { Text("Tanggal (YYYYMMDD)") },
+                                    placeholder = { Text("Contoh: 20260904") },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary),
-                                    singleLine = true
+                                    singleLine = true,
+                                    visualTransformation = DateVisualTransformation(),
+                                    supportingText = {
+                                        if (dateText.length == 8) {
+                                            Text(
+                                                "${dateText.substring(0,4)}-${dateText.substring(4,6)}-${dateText.substring(6,8)}",
+                                                color = OrangePrimary,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        } else {
+                                            Text("Ketik 8 digit angka", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
                                 )
 
                                 // Note Input

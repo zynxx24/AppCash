@@ -1,7 +1,11 @@
 package com.appcash.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -16,14 +22,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.appcash.data.model.Dashboard
@@ -40,6 +49,7 @@ import com.appcash.ui.theme.TextMedium
 fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER") isAdmin: Boolean) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
     var dendaList by remember { mutableStateOf<List<DendaInfo>>(emptyList()) }
+    var dendaExpanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
 
@@ -269,26 +279,27 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                     color = OrangePrimary
                                 )
                                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    LegendDot(color = RedNegative, label = "Pengeluaran")
                                     LegendDot(color = GreenPositive, label = "Kas Masuk")
+                                    LegendDot(color = RedNegative, label = "Pengeluaran")
                                 }
-                                WeeklyKasBarChart(
+                                WeeklyKasLineChart(
                                     labels = d.weeklyLabels,
                                     incomes = d.weeklyKasIncome,
                                     expenses = d.weeklyExpenses,
-                                    modifier = Modifier.fillMaxWidth().height(160.dp)
+                                    modifier = Modifier.fillMaxWidth().height(180.dp)
                                 )
                             }
                         }
                     }
 
-                    // Denda Summary Card
+                    // Denda Summary Card — Expandable
                     if (dendaList.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 16.dp)
+                                .clickable { dendaExpanded = !dendaExpanded },
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(2.dp)
@@ -297,12 +308,24 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                 modifier = Modifier.padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Text(
-                                    "⚠️ Denda Kas Tertunggak",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = RedNegative
-                                )
+                                // Header row with toggle icon
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "⚠️ Denda Kas Tertunggak",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = RedNegative
+                                    )
+                                    Icon(
+                                        imageVector = if (dendaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = if (dendaExpanded) "Tutup" else "Buka",
+                                        tint = RedNegative
+                                    )
+                                }
                                 Text(
                                     "Denda 5% per bulan dari total kas yang belum dibayar",
                                     style = MaterialTheme.typography.bodySmall,
@@ -337,6 +360,55 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                             style = MaterialTheme.typography.bodySmall,
                                             color = TextMedium
                                         )
+                                    }
+                                }
+
+                                // Expandable detail list
+                                AnimatedVisibility(
+                                    visible = dendaExpanded,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically()
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Divider(color = RedNegative.copy(alpha = 0.2f))
+                                        Text(
+                                            "Detail Per Anggota:",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = OrangeDark
+                                        )
+                                        dendaList.forEach { denda ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(RedNegative.copy(alpha = 0.06f))
+                                                    .padding(10.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        denda.memberName,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        "${denda.unpaidMonths} bulan tunggakan • ${denda.dendaPercentage.toInt()}%",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = TextMedium
+                                                    )
+                                                }
+                                                Text(
+                                                    "Rp ${formatRupiah(denda.dendaAmount)}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = RedNegative
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -383,43 +455,108 @@ fun DashStatCard(title: String, value: String, icon: ImageVector, modifier: Modi
 }
 
 @Composable
-fun WeeklyKasBarChart(
+fun WeeklyKasLineChart(
     labels: List<String>,
     incomes: List<Int>,
     expenses: List<Int>,
     modifier: Modifier = Modifier
 ) {
     val maxVal = (incomes.maxOrNull() ?: 1).coerceAtLeast(expenses.maxOrNull() ?: 1).toFloat()
+    val greenColor = Color(0xFF22C55E)
+    val redColor = Color(0xFFEF4444)
 
     Canvas(modifier = modifier) {
         if (size.width <= 0f || size.height <= 24.dp.toPx()) return@Canvas
-        val barWidth = 14.dp.toPx()
-        val spacing = size.width / (labels.size.coerceAtLeast(1))
+        val count = labels.size.coerceAtLeast(1)
         val chartHeight = size.height - 24.dp.toPx()
+        val chartTop = 8.dp.toPx()
         if (chartHeight <= 0f) return@Canvas
+        val stepX = if (count > 1) size.width / (count - 1).toFloat() else size.width / 2f
 
-        labels.forEachIndexed { i, _ ->
-            val xCenter = spacing * i + (spacing / 2)
-            val incomeVal = incomes.getOrElse(i) { 0 }
-            val expenseVal = expenses.getOrElse(i) { 0 }
+        // Helper to get Y coordinate
+        fun getY(value: Int): Float {
+            return chartTop + chartHeight - (value / maxVal) * chartHeight
+        }
 
-            val incomeBarHeight = ((incomeVal / maxVal) * chartHeight).coerceAtLeast(4f)
-            val expenseBarHeight = ((expenseVal / maxVal) * chartHeight).coerceAtLeast(if (expenseVal > 0) 4f else 0f)
-
-            drawRoundRect(
-                color = Color(0xFF22C55E),
-                topLeft = Offset(xCenter - barWidth - 2.dp.toPx(), chartHeight - incomeBarHeight),
-                size = Size(barWidth, incomeBarHeight),
-                cornerRadius = CornerRadius(4.dp.toPx())
+        // Draw grid lines
+        for (i in 0..3) {
+            val y = chartTop + chartHeight * i / 3f
+            drawLine(
+                color = Color.Gray.copy(alpha = 0.15f),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1f
             )
+        }
 
-            if (expenseVal > 0) {
-                drawRoundRect(
-                    color = Color(0xFFEF4444),
-                    topLeft = Offset(xCenter + 2.dp.toPx(), chartHeight - expenseBarHeight),
-                    size = Size(barWidth, expenseBarHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx())
+        // Draw income line + fill
+        if (incomes.size >= 2) {
+            val incomePath = Path()
+            val fillPath = Path()
+            incomes.forEachIndexed { i, v ->
+                val x = if (count > 1) stepX * i else size.width / 2f
+                val y = getY(v)
+                if (i == 0) { incomePath.moveTo(x, y); fillPath.moveTo(x, y) }
+                else { incomePath.lineTo(x, y); fillPath.lineTo(x, y) }
+            }
+            // Fill area
+            fillPath.lineTo(stepX * (incomes.size - 1), chartTop + chartHeight)
+            fillPath.lineTo(0f, chartTop + chartHeight)
+            fillPath.close()
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(greenColor.copy(alpha = 0.25f), greenColor.copy(alpha = 0.02f)),
+                    startY = chartTop,
+                    endY = chartTop + chartHeight
                 )
+            )
+            // Line
+            drawPath(
+                path = incomePath,
+                color = greenColor,
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
+            // Dots
+            incomes.forEachIndexed { i, v ->
+                val x = if (count > 1) stepX * i else size.width / 2f
+                drawCircle(color = greenColor, radius = 4.dp.toPx(), center = Offset(x, getY(v)))
+                drawCircle(color = Color.White, radius = 2.dp.toPx(), center = Offset(x, getY(v)))
+            }
+        }
+
+        // Draw expense line + fill
+        if (expenses.size >= 2) {
+            val expensePath = Path()
+            val fillPath = Path()
+            expenses.forEachIndexed { i, v ->
+                val x = if (count > 1) stepX * i else size.width / 2f
+                val y = getY(v)
+                if (i == 0) { expensePath.moveTo(x, y); fillPath.moveTo(x, y) }
+                else { expensePath.lineTo(x, y); fillPath.lineTo(x, y) }
+            }
+            fillPath.lineTo(stepX * (expenses.size - 1), chartTop + chartHeight)
+            fillPath.lineTo(0f, chartTop + chartHeight)
+            fillPath.close()
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(redColor.copy(alpha = 0.20f), redColor.copy(alpha = 0.02f)),
+                    startY = chartTop,
+                    endY = chartTop + chartHeight
+                )
+            )
+            drawPath(
+                path = expensePath,
+                color = redColor,
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
+            expenses.forEachIndexed { i, v ->
+                if (v > 0) {
+                    val x = if (count > 1) stepX * i else size.width / 2f
+                    drawCircle(color = redColor, radius = 4.dp.toPx(), center = Offset(x, getY(v)))
+                    drawCircle(color = Color.White, radius = 2.dp.toPx(), center = Offset(x, getY(v)))
+                }
             }
         }
     }

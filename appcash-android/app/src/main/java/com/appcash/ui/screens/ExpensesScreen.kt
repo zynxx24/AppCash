@@ -17,6 +17,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.appcash.data.model.Expense
 import com.appcash.data.repository.AppCashRepository
@@ -231,10 +235,18 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
                 OutlinedTextField(
-                    value = date, onValueChange = { date = it },
-                    label = { Text("Tanggal (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth(),
+                    value = date,
+                    onValueChange = { newVal ->
+                        val digitsOnly = newVal.filter { c -> c.isDigit() }
+                        if (digitsOnly.length <= 8) date = digitsOnly
+                    },
+                    label = { Text("Tanggal (YYYYMMDD)") },
+                    placeholder = { Text("Contoh: 20260904") },
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary),
+                    singleLine = true,
+                    visualTransformation = DateVisualTransformation()
                 )
             }
         },
@@ -242,7 +254,8 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
             Button(
                 onClick = {
                     val amt = amount.toIntOrNull() ?: 0
-                    if (description.isNotBlank() && amt > 0 && date.isNotBlank()) onConfirm(description, amt, date)
+                    val formattedDate = date.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d }
+                    if (description.isNotBlank() && amt > 0 && date.length == 8) onConfirm(description, amt, formattedDate)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
@@ -258,7 +271,8 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
 fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (String, Int, String) -> Unit) {
     var description by remember { mutableStateOf(expense.description) }
     var amount by remember { mutableStateOf(expense.amount.toString()) }
-    var date by remember { mutableStateOf(expense.date) }
+    // Convert existing YYYY-MM-DD to digits only
+    var date by remember { mutableStateOf(expense.date.replace("-", "")) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -281,10 +295,18 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
                 OutlinedTextField(
-                    value = date, onValueChange = { date = it },
-                    label = { Text("Tanggal (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth(),
+                    value = date,
+                    onValueChange = { newVal ->
+                        val digitsOnly = newVal.filter { c -> c.isDigit() }
+                        if (digitsOnly.length <= 8) date = digitsOnly
+                    },
+                    label = { Text("Tanggal (YYYYMMDD)") },
+                    placeholder = { Text("Contoh: 20260904") },
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary),
+                    singleLine = true,
+                    visualTransformation = DateVisualTransformation()
                 )
             }
         },
@@ -292,7 +314,8 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
             Button(
                 onClick = {
                     val amt = amount.toIntOrNull() ?: 0
-                    if (description.isNotBlank() && amt > 0 && date.isNotBlank()) onConfirm(description, amt, date)
+                    val formattedDate = date.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d }
+                    if (description.isNotBlank() && amt > 0 && date.length == 8) onConfirm(description, amt, formattedDate)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
