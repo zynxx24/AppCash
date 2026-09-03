@@ -302,6 +302,73 @@ Button(
 
 ---
 
+### 6. Algoritma Kalkulasi Denda 5% Per Bulan (`getDendaForMember`)
+> 📂 **File**: [`AppCashRepository.kt`](appcash-android/app/src/main/java/com/appcash/data/repository/AppCashRepository.kt)
+
+Perhitungan denda dilakukan secara otomatis berdasarkan akumulasi tunggakan kas mingguan per anggota:
+
+```kotlin
+fun getDendaForMember(memberId: Int): DendaInfo {
+    val memberKey = memberId.toString()
+    val memberRecords = paymentRecords[memberKey] ?: emptyMap()
+    val unpaidCount = datesList.count { date -> memberRecords[date] != true }
+    val unpaidKasAmount = unpaidCount * configData.kasAmount
+
+    // Denda 5% per bulan untuk tunggakan kas
+    val monthsUnpaid = (unpaidCount + 3) / 4 // Asumsi 4 minggu = 1 bulan
+    val dendaPercentage = 0.05
+    val dendaAmount = if (unpaidCount > 0) (unpaidKasAmount * dendaPercentage * monthsUnpaid).toInt() else 0
+
+    return DendaInfo(
+        memberId = memberId,
+        unpaidWeeks = unpaidCount,
+        unpaidKasAmount = unpaidKasAmount,
+        dendaAmount = dendaAmount,
+        totalDebt = unpaidKasAmount + dendaAmount
+    )
+}
+```
+* **Point Kompleksitas**: Kalkulasi proporsional tunggakan mingguan terhadap pembulatan bulan (`monthsUnpaid`), perhitungan denda 5%, serta komposisi total hutang kas.
+
+---
+
+### 7. Session Auth State & Role-Based Content Guard (`AppRoot`)
+> 📂 **File**: [`MainActivity.kt`](appcash-android/app/src/main/java/com/appcash/ui/MainActivity.kt)
+
+Sistem autentikasi mengelola perpindahan layar secara reaktif antara `LoginScreen` dan `MainContent` serta membatasi hak akses role-based:
+
+```kotlin
+@Composable
+fun AppRoot(repository: AppCashRepository) {
+    var isLoggedIn by remember { mutableStateOf(repository.isLoggedIn) }
+    var currentRole by remember { mutableStateOf(repository.currentRole) }
+    val isAdmin = currentRole == "admin"
+
+    if (!isLoggedIn) {
+        LoginScreen(
+            repository = repository,
+            onLoginSuccess = { role ->
+                currentRole = role
+                isLoggedIn = true
+            }
+        )
+    } else {
+        MainContent(
+            repository = repository,
+            isAdmin = isAdmin,
+            onLogout = {
+                repository.logout()
+                isLoggedIn = false
+            }
+        )
+    }
+}
+```
+* **Point Kompleksitas**: Dynamic State-driven screen switching tanpa fragment rebuild, penanganan callback logout clean-up session, dan propagasi parameter `isAdmin` ke seluruh composable screens.
+
+
+---
+
 ## ⚡ Fitur Utama Aplikasi
 
 | Modul | Deskripsi & Kemampuan |
