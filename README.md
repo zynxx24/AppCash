@@ -378,8 +378,8 @@ fun AppRoot(repository: AppCashRepository) {
 | **👤 Profil & Logout** | Halaman Profil pengguna (Nama, Jabatan, NIS/Email, Telepon, Bio), fitur **Edit Profil**, kartu peringatan denda, dan tombol **Log Out**. |
 | **📊 Dashboard Keuangan** | Menampilkan Total Kas Kelas, Pemasukan, Pengeluaran, Jumlah Anggota (33 Siswa), Grafik Tren Mingguan, dan Ringkasan Denda Kas. |
 | **💳 Pembayaran Kas** | Rekapitulasi pembayaran M01–M20, Modal Transfer Bank BNI (1892077413), QRIS NMID ID1026507245623, dan opsi edit status kas bagi Admin. |
-| **💸 Pengeluaran Kas** | Pencatatan transaksi pengeluaran kas (Deskripsi, Jumlah Rp, Tanggal, Kategori), filter list dinamis, dan hapus pengeluaran (Admin). |
-| **👥 Anggota XII PPLG** | Directory 33 siswa lengkap dengan NIS, Jabatan (Ketua Kelas, Wakil, Bendahara, Sekretaris, Anggota), Avatar Inisial Offline-Safe, Pencarian Nama/NIS, dan Modal Bio Siswa. |
+| **💸 Pengeluaran Kas** | Pencatatan transaksi pengeluaran kas (Deskripsi, Jumlah Rp, Tanggal, Kategori), filter list dinamis, serta **Edit & Hapus Pengeluaran** (khusus Admin). |
+| **👥 Anggota XII PPLG** | Directory 33 siswa lengkap dengan NIS, Jabatan, Avatar Inisial Offline-Safe, Pencarian Nama/NIS, Modal Bio Siswa, serta **Edit Data Anggota** (Nama, NIS, Jabatan, Bio, No. WA khusus Admin). |
 
 ---
 
@@ -391,9 +391,11 @@ fun AppRoot(repository: AppCashRepository) {
 | **Lihat Dashboard & Denda** | ✅ | ✅ |
 | **Lihat Pembayaran Kas** | ✅ | ✅ (Read-Only) |
 | **Edit Status Pembayaran Kas** | ✅ | ❌ |
-| **Lihat & Catat Pengeluaran** | ✅ | ✅ (Read-Only) |
-| **Tambah / Hapus Pengeluaran** | ✅ | ❌ |
-| **Lihat Profil & Edit Bio** | ✅ | ✅ |
+| **Lihat Pengeluaran Kas** | ✅ | ✅ (Read-Only) |
+| **Tambah / Edit / Hapus Pengeluaran** | ✅ | ❌ |
+| **Lihat Directory Anggota & Bio** | ✅ | ✅ |
+| **Edit Data Siswa / Anggota** | ✅ | ❌ |
+| **Lihat Profil & Edit Profil Sendiri** | ✅ | ✅ |
 
 ---
 

@@ -349,6 +349,27 @@ class AppCashRepository(private val context: Context) {
         Result.success(Unit)
     }
 
+    suspend fun updateExpense(id: Int, description: String, amount: Int, date: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val idx = expensesList.indexOfFirst { it.id == id }
+        if (idx >= 0) {
+            val old = expensesList[idx]
+            expensesList[idx] = old.copy(description = description, amount = amount, date = date)
+            Result.success(Unit)
+        } else {
+            Result.failure(Exception("Expense not found"))
+        }
+    }
+
+    suspend fun updateMember(id: Int, name: String, nis: String, role: String, bio: String, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val idx = membersList.indexOfFirst { it.id == id }
+        if (idx >= 0) {
+            membersList[idx] = membersList[idx].copy(name = name, nis = nis, role = role, bio = bio, phone = phone)
+            Result.success(Unit)
+        } else {
+            Result.failure(Exception("Member not found"))
+        }
+    }
+
     suspend fun getConfig(): Result<Config> = withContext(Dispatchers.IO) { Result.success(configData) }
 
     suspend fun updateConfig(req: ConfigRequest): Result<Unit> = withContext(Dispatchers.IO) {

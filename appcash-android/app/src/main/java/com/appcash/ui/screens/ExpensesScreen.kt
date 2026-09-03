@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +32,7 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
     var showAdd by remember { mutableStateOf(false) }
+    var editingExpense by remember { mutableStateOf<Expense?>(null) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
@@ -59,6 +61,26 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
         })
     }
 
+    if (editingExpense != null) {
+        EditExpenseDialog(
+            expense = editingExpense!!,
+            onDismiss = { editingExpense = null },
+            onConfirm = { desc, amt, dt ->
+                val expId = editingExpense!!.id
+                editingExpense = null
+                scope.launch {
+                    repository.updateExpense(expId, desc, amt, dt).fold(
+                        onSuccess = {
+                            expenses = expenses.map { if (it.id == expId) it.copy(description = desc, amount = amt, date = dt) else it }
+                            snackbar.showSnackbar("Pengeluaran diperbarui")
+                        },
+                        onFailure = { snackbar.showSnackbar("Gagal memperbarui pengeluaran") }
+                    )
+                }
+            }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = OrangePrimary)
@@ -79,6 +101,7 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
                             ExpenseItemCard(
                                 expense = expense,
                                 isAdmin = isAdmin,
+                                onEdit = { editingExpense = expense },
                                 onDelete = {
                                     scope.launch {
                                         repository.deleteExpense(expense.id).fold(
@@ -120,7 +143,7 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
 }
 
 @Composable
-fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onDelete: () -> Unit) {
+fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,18 +168,34 @@ fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onDelete: () -> Unit) {
                     color = Color.White
                 )
                 if (isAdmin) {
-                    Surface(
-                        onClick = onDelete,
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color.White.copy(alpha = 0.2f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(
+                            onClick = onEdit,
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color.White.copy(alpha = 0.2f)
                         ) {
-                            Text("Delete", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                            Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.White, modifier = Modifier.size(16.dp))
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("Edit", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        Surface(
+                            onClick = onDelete,
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color.White.copy(alpha = 0.2f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("Hapus", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                                Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.White, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
@@ -208,6 +247,56 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
             ) { Text("Tambah", color = Color.White, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal", color = OrangePrimary) }
+        }
+    )
+}
+
+@Composable
+fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (String, Int, String) -> Unit) {
+    var description by remember { mutableStateOf(expense.description) }
+    var amount by remember { mutableStateOf(expense.amount.toString()) }
+    var date by remember { mutableStateOf(expense.date) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text("Edit Pengeluaran", fontWeight = FontWeight.Bold, color = OrangePrimary)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = description, onValueChange = { description = it },
+                    label = { Text("Deskripsi") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+                OutlinedTextField(
+                    value = amount, onValueChange = { amount = it.filter { c -> c.isDigit() } },
+                    label = { Text("Jumlah (Rp)") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+                OutlinedTextField(
+                    value = date, onValueChange = { date = it },
+                    label = { Text("Tanggal (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amt = amount.toIntOrNull() ?: 0
+                    if (description.isNotBlank() && amt > 0 && date.isNotBlank()) onConfirm(description, amt, date)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                shape = RoundedCornerShape(10.dp)
+            ) { Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Batal", color = OrangePrimary) }

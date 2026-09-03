@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -27,14 +28,18 @@ import com.appcash.data.model.Member
 import com.appcash.data.repository.AppCashRepository
 import com.appcash.ui.theme.OrangeLight
 import com.appcash.ui.theme.OrangePrimary
+import kotlinx.coroutines.launch
 
 @Composable
-fun MembersScreen(repository: AppCashRepository) {
+fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
     var members by remember { mutableStateOf<List<Member>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedMemberForBio by remember { mutableStateOf<Member?>(null) }
+    var editingMember by remember { mutableStateOf<Member?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         loading = true
@@ -56,7 +61,32 @@ fun MembersScreen(repository: AppCashRepository) {
     }
 
     if (selectedMemberForBio != null) {
-        MemberBioDialog(member = selectedMemberForBio!!, onDismiss = { selectedMemberForBio = null })
+        MemberBioDialog(
+            member = selectedMemberForBio!!,
+            isAdmin = isAdmin,
+            onDismiss = { selectedMemberForBio = null },
+            onEdit = { editingMember = it; selectedMemberForBio = null }
+        )
+    }
+
+    if (editingMember != null) {
+        EditMemberDialog(
+            member = editingMember!!,
+            onDismiss = { editingMember = null },
+            onConfirm = { name, nis, role, bio, phone ->
+                val mId = editingMember!!.id
+                editingMember = null
+                scope.launch {
+                    val result = repository.updateMember(mId, name, nis, role, bio, phone)
+                    if (result.isSuccess) {
+                        members = members.map { if (it.id == mId) it.copy(name = name, nis = nis, role = role, bio = bio, phone = phone) else it }
+                        snackbar.showSnackbar("Anggota diperbarui")
+                    } else {
+                        snackbar.showSnackbar("Gagal memperbarui anggota")
+                    }
+                }
+            }
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -135,6 +165,7 @@ fun MembersScreen(repository: AppCashRepository) {
                 }
             }
         }
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
@@ -193,7 +224,7 @@ fun MemberCard(member: Member, index: Int, onClick: () -> Unit) {
 }
 
 @Composable
-fun MemberBioDialog(member: Member, onDismiss: () -> Unit) {
+fun MemberBioDialog(member: Member, isAdmin: Boolean, onDismiss: () -> Unit, onEdit: (Member) -> Unit) {
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -245,17 +276,29 @@ fun MemberBioDialog(member: Member, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=${member.phone}"))
-                    try { context.startActivity(intent) } catch (e: Exception) {}
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Icon(Icons.Default.Phone, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Hubungi WA", color = Color.White, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (isAdmin) {
+                    OutlinedButton(
+                        onClick = { onEdit(member) },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Edit", color = OrangePrimary, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=${member.phone}"))
+                        try { context.startActivity(intent) } catch (e: Exception) {}
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Phone, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Hubungi WA", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         },
         dismissButton = {
@@ -275,4 +318,68 @@ fun BioPill(label: String, value: String) {
 @Composable
 fun BioRow(label: String, value: String) {
     BioPill(label, value)
+}
+
+@Composable
+fun EditMemberDialog(member: Member, onDismiss: () -> Unit, onConfirm: (String, String, String, String, String) -> Unit) {
+    var name by remember { mutableStateOf(member.name) }
+    var nis by remember { mutableStateOf(member.nis) }
+    var role by remember { mutableStateOf(member.role) }
+    var bio by remember { mutableStateOf(member.bio) }
+    var phone by remember { mutableStateOf(member.phone) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Text("Edit Anggota", fontWeight = FontWeight.Bold, color = OrangePrimary)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Nama") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+                OutlinedTextField(
+                    value = nis, onValueChange = { nis = it },
+                    label = { Text("NIS") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+                OutlinedTextField(
+                    value = role, onValueChange = { role = it },
+                    label = { Text("Jabatan") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+                OutlinedTextField(
+                    value = phone, onValueChange = { phone = it },
+                    label = { Text("No. Telepon") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+                OutlinedTextField(
+                    value = bio, onValueChange = { bio = it },
+                    label = { Text("Bio") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    minLines = 2,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank() && nis.isNotBlank()) onConfirm(name, nis, role, bio, phone)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                shape = RoundedCornerShape(10.dp)
+            ) { Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal", color = OrangePrimary) }
+        }
+    )
 }
