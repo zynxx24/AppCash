@@ -366,6 +366,34 @@ fun AppRoot(repository: AppCashRepository) {
 ```
 * **Point Kompleksitas**: Dynamic State-driven screen switching tanpa fragment rebuild, penanganan callback logout clean-up session, dan propagasi parameter `isAdmin` ke seluruh composable screens.
 
+---
+
+### 8. Admin Management Engine: Edit Pengeluaran & Edit Anggota
+> 📂 **File**: [`AppCashRepository.kt`](appcash-android/app/src/main/java/com/appcash/data/repository/AppCashRepository.kt), [`ExpensesScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt), [`MembersScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/MembersScreen.kt)
+
+Untuk memberikan kendali administratif yang fleksibel, Admin dapat memperbarui rincian transaksi pengeluaran maupun informasi profil siswa (Nama, NIS, Jabatan, Bio, No. WA):
+
+```kotlin
+// In-Memory Repository State Update
+suspend fun updateExpense(id: Int, description: String, amount: Int, date: String): Result<Unit> = withContext(Dispatchers.IO) {
+    val idx = expensesList.indexOfFirst { it.id == id }
+    if (idx >= 0) {
+        val old = expensesList[idx]
+        expensesList[idx] = old.copy(description = description, amount = amount, date = date)
+        Result.success(Unit)
+    } else Result.failure(Exception("Expense not found"))
+}
+
+suspend fun updateMember(id: Int, name: String, nis: String, role: String, bio: String, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
+    val idx = membersList.indexOfFirst { it.id == id }
+    if (idx >= 0) {
+        membersList[idx] = membersList[idx].copy(name = name, nis = nis, role = role, bio = bio, phone = phone)
+        Result.success(Unit)
+    } else Result.failure(Exception("Member not found"))
+}
+```
+
+* **Point Kompleksitas**: Dynamic item replacement pada In-Memory Standalone DB, Re-rendering State secara reaktif pada Jetpack Compose LazyColumn/LazyRow, serta dialog input modal ter-validasi khusus Admin.
 
 ---
 
