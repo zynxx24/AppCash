@@ -7,6 +7,16 @@ import kotlinx.coroutines.withContext
 
 class AppCashRepository(private val context: Context) {
 
+    // --- SESSION STATE ---
+    private var currentRole: String? = null
+    private var currentMemberId: Int? = null
+    private var isLoggedIn: Boolean = false
+    private var adminEmail: String = ""
+
+    // --- ADMIN CREDENTIALS ---
+    private val ADMIN_EMAIL = "admin@gmail.com"
+    private val ADMIN_PASSWORD = "admin123"
+
     // --- IN-MEMORY STANDALONE DATABASE (XII PPLG) ---
     private val membersList = mutableListOf(
         Member(1,  "Boyke Vilano Hamonangan Sihite",          "2026-PPLG-001", "Anggota",      "Siswa XII PPLG", "17 Tahun", "", ""),
@@ -53,6 +63,15 @@ class AppCashRepository(private val context: Context) {
         "M17 (27 Apr)", "M18 (04 Mei)", "M19 (11 Mei)", "M20 (18 Mei)"
     )
 
+    // Monthly groupings for denda calculation (4 weeks per month approx)
+    private val monthlyGroups = listOf(
+        "Januari"  to listOf("M01 (05 Jan)", "M02 (12 Jan)", "M03 (19 Jan)", "M04 (26 Jan)"),
+        "Februari" to listOf("M05 (02 Feb)", "M06 (09 Feb)", "M07 (16 Feb)", "M08 (23 Feb)"),
+        "Maret"    to listOf("M09 (02 Mar)", "M10 (09 Mar)", "M11 (16 Mar)", "M12 (23 Mar)"),
+        "April"    to listOf("M13 (30 Mar)", "M14 (06 Apr)", "M15 (13 Apr)", "M16 (20 Apr)"),
+        "Mei"      to listOf("M17 (27 Apr)", "M18 (04 Mei)", "M19 (11 Mei)", "M20 (18 Mei)")
+    )
+
     private val paymentRecords = mutableMapOf<String, MutableMap<String, Boolean>>()
 
     private val expensesList = mutableListOf(
@@ -94,23 +113,160 @@ class AppCashRepository(private val context: Context) {
         }
     }
 
-    suspend fun getRole(): String? = "admin"
-    suspend fun hasToken(): Boolean = true
+    // --- SESSION MANAGEMENT ---
+    suspend fun getRole(): String? = currentRole
+    suspend fun hasToken(): Boolean = isLoggedIn
 
     suspend fun login(@Suppress("UNUSED_PARAMETER") req: LoginRequest): Result<LoginResponse> = withContext(Dispatchers.IO) {
         Result.success(LoginResponse(token = "dummy_token", role = "admin"))
     }
 
-    suspend fun login(role: String, @Suppress("UNUSED_PARAMETER") username: String? = null, @Suppress("UNUSED_PARAMETER") password: String? = null, @Suppress("UNUSED_PARAMETER") memberId: Int? = null, @Suppress("UNUSED_PARAMETER") name: String? = null): Result<LoginResponse> = withContext(Dispatchers.IO) {
-        Result.success(LoginResponse(token = "dummy_token", role = role))
+    suspend fun login(role: String, email: String? = null, password: String? = null, memberId: Int? = null, @Suppress("UNUSED_PARAMETER") name: String? = null): Result<LoginResponse> = withContext(Dispatchers.IO) {
+        if (role == "admin") {
+            if (email == ADMIN_EMAIL && password == ADMIN_PASSWORD) {
+                currentRole = "admin"
+                isLoggedIn = true
+                adminEmail = email
+                Result.success(LoginResponse(token = "admin_token", role = "admin"))
+            } else {
+                Result.failure(Exception("Email atau password salah"))
+            }
+        } else {
+            // User login via member selection
+            if (memberId != null && membersList.any { it.id == memberId }) {
+                currentRole = "user"
+                currentMemberId = memberId
+                isLoggedIn = true
+                Result.success(LoginResponse(token = "user_token_$memberId", role = "user"))
+            } else {
+                Result.failure(Exception("Pilih anggota terlebih dahulu"))
+            }
+        }
     }
 
-    suspend fun setMemberId(@Suppress("UNUSED_PARAMETER") id: Int) = withContext(Dispatchers.IO) {}
+    suspend fun setMemberId(id: Int) = withContext(Dispatchers.IO) {
+        currentMemberId = id
+    }
 
     suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
+        currentRole = null
+        currentMemberId = null
+        isLoggedIn = false
+        adminEmail = ""
         Result.success(Unit)
     }
 
+    // --- PROFILE ---
+    suspend fun getCurrentUser(): Result<UserProfile> = withContext(Dispatchers.IO) {
+        if (currentRole == "admin") {
+            Result.success(UserProfile(
+                name = "Administrator",
+                role = "Admin",
+                email = adminEmail,
+                nis = "-",
+                phone = "-",
+                bio = "Administrator AppCash XII PPLG",
+                umur = "-"
+            ))
+        } else {
+            val member = membersList.find { it.id == currentMemberId }
+            if (member != null) {
+                Result.success(UserProfile(
+                    name = member.name,
+                    role = member.role,
+                    email = "",
+                    nis = member.nis,
+                    phone = member.phone,
+                    bio = member.bio,
+                    umur = member.umur
+                ))
+            } else {
+                Result.failure(Exception("User not found"))
+            }
+        }
+    }
+
+    suspend fun updateProfile(name: String, phone: String, bio: String): Result<Unit> = withContext(Dispatchers.IO) {
+        if (currentRole == "admin") {
+            // Admin profile is virtual, no member to update
+            Result.success(Unit)
+        } else {
+            val idx = membersList.indexOfFirst { it.id == currentMemberId }
+            if (idx >= 0) {
+                membersList[idx] = membersList[idx].copy(name = name, phone = phone, bio = bio)
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("User not found"))
+            }
+        }
+    }
+
+    // --- DENDA (PENALTY) CALCULATION ---
+    // 5% per month of unpaid kas
+    suspend fun getDendaForAllMembers(): Result<List<DendaInfo>> = withContext(Dispatchers.IO) {
+        val dendaList = mutableListOf<DendaInfo>()
+        val kasPerWeek = configData.kasAmount
+
+        membersList.forEach { member ->
+            val memberPayments = paymentRecords[member.id.toString()] ?: emptyMap()
+            var unpaidMonths = 0
+
+            monthlyGroups.forEach { (_, weeks) ->
+                val unpaidWeeksInMonth = weeks.count { week -> memberPayments[week] != true }
+                if (unpaidWeeksInMonth > 0) {
+                    unpaidMonths++
+                }
+            }
+
+            if (unpaidMonths > 0) {
+                val totalUnpaidWeeks = datesList.count { date -> memberPayments[date] != true }
+                val totalUnpaid = totalUnpaidWeeks * kasPerWeek
+                val dendaPct = unpaidMonths * 5.0  // 5% per month
+                val dendaAmount = (totalUnpaid * dendaPct / 100).toInt()
+                dendaList.add(DendaInfo(
+                    memberId = member.id,
+                    memberName = member.name,
+                    unpaidMonths = unpaidMonths,
+                    dendaPercentage = dendaPct,
+                    dendaAmount = dendaAmount
+                ))
+            }
+        }
+        Result.success(dendaList)
+    }
+
+    suspend fun getDendaForMember(memberId: Int): Result<DendaInfo?> = withContext(Dispatchers.IO) {
+        val member = membersList.find { it.id == memberId }
+            ?: return@withContext Result.failure(Exception("Member not found"))
+        val memberPayments = paymentRecords[memberId.toString()] ?: emptyMap()
+        val kasPerWeek = configData.kasAmount
+        var unpaidMonths = 0
+
+        monthlyGroups.forEach { (_, weeks) ->
+            val unpaidWeeksInMonth = weeks.count { week -> memberPayments[week] != true }
+            if (unpaidWeeksInMonth > 0) {
+                unpaidMonths++
+            }
+        }
+
+        if (unpaidMonths > 0) {
+            val totalUnpaidWeeks = datesList.count { date -> memberPayments[date] != true }
+            val totalUnpaid = totalUnpaidWeeks * kasPerWeek
+            val dendaPct = unpaidMonths * 5.0
+            val dendaAmount = (totalUnpaid * dendaPct / 100).toInt()
+            Result.success(DendaInfo(
+                memberId = member.id,
+                memberName = member.name,
+                unpaidMonths = unpaidMonths,
+                dendaPercentage = dendaPct,
+                dendaAmount = dendaAmount
+            ))
+        } else {
+            Result.success(null)
+        }
+    }
+
+    // --- DASHBOARD ---
     suspend fun getDashboard(): Result<Dashboard> = withContext(Dispatchers.IO) {
         var totalPaymentsCount = 0
         var totalKasIncome = 0

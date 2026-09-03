@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) -> Unit) {
     var selectedRole by remember { mutableStateOf("admin") }
-    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var memberId by remember { mutableStateOf("") }
     var members by remember { mutableStateOf<List<Member>>(emptyList()) }
@@ -26,10 +26,6 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        if (repository.hasToken()) {
-            val role = repository.getRole() ?: "user"
-            onLoginSuccess(role)
-        }
         repository.getMembers().fold(
             onSuccess = { members = it },
             onFailure = { }
@@ -45,13 +41,13 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = selectedRole == "admin",
-                        onClick = { selectedRole = "admin" },
+                        onClick = { selectedRole = "admin"; error = null },
                         label = { Text("Admin") },
                         modifier = Modifier.weight(1f)
                     )
                     FilterChip(
                         selected = selectedRole == "user",
-                        onClick = { selectedRole = "user" },
+                        onClick = { selectedRole = "user"; error = null },
                         label = { Text("Siswa") },
                         modifier = Modifier.weight(1f)
                     )
@@ -59,17 +55,21 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
 
                 if (selectedRole == "admin") {
                     OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
-                        modifier = Modifier.fillMaxWidth()
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
                         visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth()
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                 } else {
                     var expanded by remember { mutableStateOf(false) }
@@ -108,7 +108,7 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
                             val memberIdInt = memberId.toIntOrNull()
                             val result = repository.login(
                                 role = selectedRole,
-                                username = if (selectedRole == "admin") username else null,
+                                email = if (selectedRole == "admin") email else null,
                                 password = if (selectedRole == "admin") password else null,
                                 memberId = if (selectedRole == "user") memberIdInt else null,
                                 name = if (selectedRole == "user") members.find { it.id == memberIdInt }?.name else null

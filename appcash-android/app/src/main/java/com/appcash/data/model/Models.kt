@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class LoginRequest(
     val role: String,
-    val username: String? = null,
+    val email: String? = null,
     val password: String? = null,
     @SerializedName("member_id") val memberId: Int? = null,
     val name: String? = null
@@ -113,4 +113,23 @@ data class PaymentRecord(
     val date: String,
     val note: String = "",
     val type: String = "Kas"
+)
+
+data class UserProfile(
+    val name: String,
+    val role: String,
+    val email: String = "",
+    val nis: String = "",
+    val phone: String = "",
+    val bio: String = "",
+    val umur: String = "17 Tahun",
+    val avatarUrl: String = ""
+)
+
+data class DendaInfo(
+    val memberId: Int,
+    val memberName: String,
+    val unpaidMonths: Int,
+    val dendaPercentage: Double,
+    val dendaAmount: Int
 )

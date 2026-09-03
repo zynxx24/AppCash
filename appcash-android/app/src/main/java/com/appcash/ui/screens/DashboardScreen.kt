@@ -27,16 +27,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.appcash.data.model.Dashboard
+import com.appcash.data.model.DendaInfo
 import com.appcash.data.repository.AppCashRepository
 import com.appcash.ui.theme.GreenPositive
 import com.appcash.ui.theme.OrangeDark
 import com.appcash.ui.theme.OrangeLight
 import com.appcash.ui.theme.OrangePrimary
 import com.appcash.ui.theme.RedNegative
+import com.appcash.ui.theme.TextMedium
 
 @Composable
 fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER") isAdmin: Boolean) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
+    var dendaList by remember { mutableStateOf<List<DendaInfo>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
 
@@ -46,6 +49,10 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
         repository.getDashboard().fold(
             onSuccess = { dashboard = it },
             onFailure = { error = it.message ?: "Gagal memuat dashboard" }
+        )
+        repository.getDendaForAllMembers().fold(
+            onSuccess = { dendaList = it },
+            onFailure = { }
         )
         loading = false
     }
@@ -271,6 +278,67 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                     expenses = d.weeklyExpenses,
                                     modifier = Modifier.fillMaxWidth().height(160.dp)
                                 )
+                            }
+                        }
+                    }
+
+                    // Denda Summary Card
+                    if (dendaList.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    "⚠️ Denda Kas Tertunggak",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = RedNegative
+                                )
+                                Text(
+                                    "Denda 5% per bulan dari total kas yang belum dibayar",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMedium
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text(
+                                            "${dendaList.size} Anggota",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = OrangeDark
+                                        )
+                                        Text(
+                                            "punya tunggakan",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextMedium
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            "Rp ${formatRupiah(dendaList.sumOf { it.dendaAmount })}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = RedNegative
+                                        )
+                                        Text(
+                                            "total denda",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextMedium
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

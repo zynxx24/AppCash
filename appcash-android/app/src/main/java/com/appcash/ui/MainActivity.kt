@@ -11,13 +11,11 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
@@ -53,18 +51,43 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainContent(repository = repository)
+                    AppRoot(repository = repository)
                 }
             }
         }
     }
 }
 
+@Composable
+fun AppRoot(repository: AppCashRepository) {
+    var isLoggedIn by remember { mutableStateOf(false) }
+    var currentRole by remember { mutableStateOf("user") }
+
+    if (!isLoggedIn) {
+        LoginScreen(
+            repository = repository,
+            onLoginSuccess = { role ->
+                currentRole = role
+                isLoggedIn = true
+            }
+        )
+    } else {
+        MainContent(
+            repository = repository,
+            isAdmin = currentRole == "admin",
+            onLogout = {
+                isLoggedIn = false
+                currentRole = "user"
+            }
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainContent(repository: AppCashRepository) {
-    val isAdmin = remember { true }
-    val pagerState = rememberPagerState(initialPage = 2) { bottomNavItems.size }
+fun MainContent(repository: AppCashRepository, isAdmin: Boolean, onLogout: () -> Unit) {
+    val navItems = if (isAdmin) bottomNavItemsAdmin else bottomNavItemsUser
+    val pagerState = rememberPagerState(initialPage = 2) { navItems.size }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -82,7 +105,7 @@ fun MainContent(repository: AppCashRepository) {
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    bottomNavItems.forEachIndexed { index, screen ->
+                    navItems.forEachIndexed { index, screen ->
                         val selected = pagerState.currentPage == index
                         val isCenter = index == 2 // Dashboard = center
 
@@ -154,13 +177,22 @@ fun MainContent(repository: AppCashRepository) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) { page ->
-            when (page) {
-                0 -> PaymentsScreen(repository = repository, isAdmin = isAdmin)
-                1 -> ExpensesScreen(repository = repository, isAdmin = isAdmin)
-                2 -> DashboardScreen(repository = repository, isAdmin = isAdmin)
-                3 -> ScheduleScreen()
-                4 -> MembersScreen(repository = repository)
-                5 -> PaymentInputScreen(repository = repository)
+            if (isAdmin) {
+                when (page) {
+                    0 -> PaymentsScreen(repository = repository, isAdmin = true)
+                    1 -> ExpensesScreen(repository = repository, isAdmin = true)
+                    2 -> DashboardScreen(repository = repository, isAdmin = true)
+                    3 -> MembersScreen(repository = repository)
+                    4 -> ProfileScreen(repository = repository, isAdmin = true, onLogout = onLogout)
+                }
+            } else {
+                when (page) {
+                    0 -> PaymentsScreen(repository = repository, isAdmin = false)
+                    1 -> ExpensesScreen(repository = repository, isAdmin = false)
+                    2 -> DashboardScreen(repository = repository, isAdmin = false)
+                    3 -> MembersScreen(repository = repository)
+                    4 -> ProfileScreen(repository = repository, isAdmin = false, onLogout = onLogout)
+                }
             }
         }
     }
@@ -173,11 +205,20 @@ data class ScreenItem(
     val iconFilled: ImageVector = icon
 )
 
-val bottomNavItems = listOf(
+// Admin: Kas, Pengeluaran, Dashboard, Anggota, Profil
+val bottomNavItemsAdmin = listOf(
     ScreenItem("payments", "Kas",        Icons.Outlined.ShoppingCart, Icons.Filled.ShoppingCart),
     ScreenItem("expenses", "Pengeluaran",Icons.Outlined.Info,         Icons.Filled.Info),
     ScreenItem("dashboard","Dashboard",  Icons.Outlined.Home,         Icons.Filled.Home),
-    ScreenItem("schedule", "Jadwal",     Icons.Outlined.DateRange,    Icons.Filled.DateRange),
     ScreenItem("members",  "Anggota",    Icons.Outlined.Person,       Icons.Filled.Person),
-    ScreenItem("input",    "Input Kas",  Icons.Outlined.Edit,         Icons.Filled.Edit)
+    ScreenItem("profile",  "Profil",     Icons.Outlined.Person,       Icons.Filled.Person)
+)
+
+// User: Kas, Pengeluaran, Dashboard, Anggota, Profil
+val bottomNavItemsUser = listOf(
+    ScreenItem("payments", "Kas",        Icons.Outlined.ShoppingCart, Icons.Filled.ShoppingCart),
+    ScreenItem("expenses", "Pengeluaran",Icons.Outlined.Info,         Icons.Filled.Info),
+    ScreenItem("dashboard","Dashboard",  Icons.Outlined.Home,         Icons.Filled.Home),
+    ScreenItem("members",  "Anggota",    Icons.Outlined.Person,       Icons.Filled.Person),
+    ScreenItem("profile",  "Profil",     Icons.Outlined.Person,       Icons.Filled.Person)
 )
