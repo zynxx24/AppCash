@@ -373,7 +373,7 @@ fun AppRoot(repository: AppCashRepository) {
 
 | Modul | Deskripsi & Kemampuan |
 | :--- | :--- |
-| **🔐 Autentikasi Sesi** | **Admin**: Login via Email (`admin@gmail.com`) & Password (`admin123`) untuk akses full.<br>**Siswa**: Login via Dropdown Anggota (read-only mode). |
+| **🔐 Autentikasi Sesi** | Halaman Login Tunggal Bersatu (*Single Unified Screen*). Secara default menampilkan dropdown **Pilih Nama Siswa** untuk login Siswa (read-only). Menyediakan opsi link **Masuk dengan Email & Password** (`admin@gmail.com` / `admin123`) tanpa tombol "Admin" yang mencolok. |
 | **⚠️ Denda Kas 5%/Bulan** | Otomatis menghitung denda keterlambatan **5% per bulan** dari total nominal kas yang nunggak. Ringkasan denda muncul di Dashboard & Profil. |
 | **👤 Profil & Logout** | Halaman Profil pengguna (Nama, Jabatan, NIS/Email, Telepon, Bio), fitur **Edit Profil**, kartu peringatan denda, dan tombol **Log Out**. |
 | **📊 Dashboard Keuangan** | Menampilkan Total Kas Kelas, Pemasukan, Pengeluaran, Jumlah Anggota (33 Siswa), Grafik Tren Mingguan, dan Ringkasan Denda Kas. |
