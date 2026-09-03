@@ -26,7 +26,9 @@
 1. **Transparansi Keuangan**: Menyajikan data kas masuk, kas keluar, dan saldo riil secara real-time.
 2. **Kemudahan Pembayaran**: Menyediakan metode transfer langsung via **Bank BNI** dan **Scan QRIS** yang terhubung secara otomatis ke admin WhatsApp.
 3. **Pencatatan Otomatis & Terstruktur**: Mengeliminasi pembukuan manual dengan rekapitulasi pembayaran mingguan per siswa (M01 hingga M20).
-4. **Performa Tinggi & Ringan**: Ukuran APK teroptimasi (**~8.7 MB**) dengan kompatibilitas dari Android 8.0 (Oreo) hingga Android 16 (One UI 8).
+4. **Sistem Denda Otomatis**: Menerapkan denda 5% per bulan untuk setiap tunggakan kas mingguan guna menjaga kedisiplinan iuran kelas.
+5. **Autentikasi Berbasis Peran & Profil**: Sesi login terpisah untuk **Admin** (akses edit/full) dan **Siswa** (akses read-only) dilengkapi dengan halaman Profil pengguna dan fungsi Logout.
+6. **Performa Tinggi & Ringan**: Ukuran APK teroptimasi (**~8.7 MB**) dengan kompatibilitas dari Android 8.0 (Oreo) hingga Android 16 (One UI 8).
 
 ---
 
@@ -304,11 +306,27 @@ Button(
 
 | Modul | Deskripsi & Kemampuan |
 | :--- | :--- |
-| **📊 Dashboard Keuangan** | Menampilkan Total Kas Kelas, Pemasukan, Pengeluaran, Jumlah Anggota (20 Siswa), dan Grafik Tren Mingguan. |
+| **🔐 Autentikasi Sesi** | **Admin**: Login via Email (`admin@gmail.com`) & Password (`admin123`) untuk akses full.<br>**Siswa**: Login via Dropdown Anggota (read-only mode). |
+| **⚠️ Denda Kas 5%/Bulan** | Otomatis menghitung denda keterlambatan **5% per bulan** dari total nominal kas yang nunggak. Ringkasan denda muncul di Dashboard & Profil. |
+| **👤 Profil & Logout** | Halaman Profil pengguna (Nama, Jabatan, NIS/Email, Telepon, Bio), fitur **Edit Profil**, kartu peringatan denda, dan tombol **Log Out**. |
+| **📊 Dashboard Keuangan** | Menampilkan Total Kas Kelas, Pemasukan, Pengeluaran, Jumlah Anggota (33 Siswa), Grafik Tren Mingguan, dan Ringkasan Denda Kas. |
 | **💳 Pembayaran Kas** | Rekapitulasi pembayaran M01–M20, Modal Transfer Bank BNI (1892077413), QRIS NMID ID1026507245623, dan opsi edit status kas bagi Admin. |
-| **💸 Pengeluaran Kas** | Pencatatan transaksi pengeluaran kas (Deskripsi, Jumlah Rp, Tanggal, Kategori), filter list dinamis, dan hapus pengeluaran. |
-| **📅 Jadwal Pelajaran** | Daftar mata pelajaran XII PPLG per hari (Senin–Jumat), penandaan khusus mata pelajaran RPL (Pak Rizky/Pak Surya), serta pengumuman perpindahan ruangan (Meeting Room + FO). |
-| **👥 Anggota XII PPLG** | Directory 20 siswa lengkap dengan NIS, Jabatan (Ketua Kelas, Wakil, Bendahara, Sekretaris, Anggota), Avatar Inisial Offline-Safe, Pencarian Nama/NIS, dan Modal Bio Siswa. |
+| **💸 Pengeluaran Kas** | Pencatatan transaksi pengeluaran kas (Deskripsi, Jumlah Rp, Tanggal, Kategori), filter list dinamis, dan hapus pengeluaran (Admin). |
+| **👥 Anggota XII PPLG** | Directory 33 siswa lengkap dengan NIS, Jabatan (Ketua Kelas, Wakil, Bendahara, Sekretaris, Anggota), Avatar Inisial Offline-Safe, Pencarian Nama/NIS, dan Modal Bio Siswa. |
+
+---
+
+## 🔒 Hak Akses Berdasarkan Peran (Role-Based Access Control)
+
+| Fitur / Halaman | Admin (`admin@gmail.com`) | User / Siswa |
+| :--- | :---: | :---: |
+| **Login Sesi & Logout** | ✅ | ✅ |
+| **Lihat Dashboard & Denda** | ✅ | ✅ |
+| **Lihat Pembayaran Kas** | ✅ | ✅ (Read-Only) |
+| **Edit Status Pembayaran Kas** | ✅ | ❌ |
+| **Lihat & Catat Pengeluaran** | ✅ | ✅ (Read-Only) |
+| **Tambah / Hapus Pengeluaran** | ✅ | ❌ |
+| **Lihat Profil & Edit Bio** | ✅ | ✅ |
 
 ---
 
