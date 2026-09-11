@@ -184,20 +184,14 @@ fun MemberCard(member: Member, index: Int, onClick: () -> Unit) {
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Initial Badge Avatar (100% offline safe)
+            // Profile Photo Avatar
             Box(
                 modifier = Modifier
                     .size(50.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.25f)),
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = member.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
-                )
+                StudentAvatar(memberId = member.id, size = 50)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -231,20 +225,7 @@ fun MemberBioDialog(member: Member, isAdmin: Boolean, onDismiss: () -> Unit, onE
         shape = RoundedCornerShape(24.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(OrangePrimary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = member.name.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
-                    )
-                }
+                StudentAvatar(memberId = member.id, size = 48)
                 Column {
                     Text(member.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
                     Text(member.role, style = MaterialTheme.typography.bodySmall, color = OrangePrimary, fontWeight = FontWeight.SemiBold)

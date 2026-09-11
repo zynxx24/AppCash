@@ -118,6 +118,14 @@ class AppCashRepository(private val context: Context) {
     // --- SESSION MANAGEMENT ---
     suspend fun getRole(): String? = currentRole
     suspend fun hasToken(): Boolean = isLoggedIn
+    suspend fun getCurrentMemberId(): Int? = currentMemberId
+
+    suspend fun getPaymentStatusForMember(memberId: Int): Result<Pair<Int, Int>> = withContext(Dispatchers.IO) {
+        val memberPayments = paymentRecords[memberId.toString()] ?: emptyMap()
+        val totalWeeks = datesList.size
+        val paidWeeks = datesList.count { date -> memberPayments[date] == true }
+        Result.success(Pair(paidWeeks, totalWeeks))
+    }
 
     suspend fun login(@Suppress("UNUSED_PARAMETER") req: LoginRequest): Result<LoginResponse> = withContext(Dispatchers.IO) {
         Result.success(LoginResponse(token = "dummy_token", role = "admin"))

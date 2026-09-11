@@ -36,6 +36,7 @@ fun ProfileScreen(
     var dendaInfo by remember { mutableStateOf<DendaInfo?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
+    var currentMemberId by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -43,23 +44,12 @@ fun ProfileScreen(
             onSuccess = { profile = it; loading = false },
             onFailure = { loading = false }
         )
-        if (!isAdmin) {
-            repository.getDendaForMember(0).fold(
-                onSuccess = { /* will be fetched per member */ },
-                onFailure = { }
-            )
-        }
+        currentMemberId = repository.getCurrentMemberId()
         // If user, get their denda
         val role = repository.getRole()
-        if (role == "user") {
-            repository.getDendaForAllMembers().fold(
-                onSuccess = { list ->
-                    // Find current user's denda
-                    val currentProfile = profile
-                    if (currentProfile != null) {
-                        dendaInfo = list.find { it.memberName == currentProfile.name }
-                    }
-                },
+        if (role == "user" && currentMemberId != null) {
+            repository.getDendaForMember(currentMemberId!!).fold(
+                onSuccess = { dendaInfo = it },
                 onFailure = { }
             )
         }
@@ -80,19 +70,23 @@ fun ProfileScreen(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(Color.White),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Filled.Person,
-                        contentDescription = "Avatar",
-                        modifier = Modifier.size(48.dp),
-                        tint = OrangePrimary
-                    )
+                if (!isAdmin && currentMemberId != null) {
+                    StudentAvatar(memberId = currentMemberId!!, size = 80)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.size(48.dp),
+                            tint = OrangePrimary
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(

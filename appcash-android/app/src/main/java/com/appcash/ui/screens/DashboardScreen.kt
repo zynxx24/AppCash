@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.appcash.data.model.Dashboard
 import com.appcash.data.model.DendaInfo
+import com.appcash.data.model.UserProfile
 import com.appcash.data.repository.AppCashRepository
 import com.appcash.ui.theme.GreenPositive
 import com.appcash.ui.theme.OrangeDark
@@ -52,6 +53,11 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
     var dendaExpanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var userProfile by remember { mutableStateOf<UserProfile?>(null) }
+    var userPaidWeeks by remember { mutableIntStateOf(0) }
+    var userTotalWeeks by remember { mutableIntStateOf(0) }
+    var userDenda by remember { mutableStateOf<DendaInfo?>(null) }
+    var currentMemberId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         loading = true
@@ -64,6 +70,26 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
             onSuccess = { dendaList = it },
             onFailure = { }
         )
+        // Load user-specific data
+        repository.getCurrentUser().fold(
+            onSuccess = { userProfile = it },
+            onFailure = {}
+        )
+        val memberId = repository.getCurrentMemberId()
+        currentMemberId = memberId
+        if (memberId != null && !isAdmin) {
+            repository.getPaymentStatusForMember(memberId).fold(
+                onSuccess = { (paid, total) ->
+                    userPaidWeeks = paid
+                    userTotalWeeks = total
+                },
+                onFailure = {}
+            )
+            repository.getDendaForMember(memberId).fold(
+                onSuccess = { userDenda = it },
+                onFailure = {}
+            )
+        }
         loading = false
     }
 
@@ -89,18 +115,23 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(
-                                "Welcome Back,",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "Student XII PPLG",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            if (!isAdmin && currentMemberId != null) {
+                                StudentAvatar(memberId = currentMemberId!!, size = 44)
+                            }
+                            Column {
+                                Text(
+                                    "Welcome Back,",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    if (isAdmin) "Administrator" else userProfile?.name ?: "Student XII PPLG",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
                         }
                     }
 
@@ -257,6 +288,73 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // USER: Status Kas Anda Card
+                    if (!isAdmin && currentMemberId != null) {
+                        val unpaidWeeks = userTotalWeeks - userPaidWeeks
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (unpaidWeeks == 0) GreenPositive.copy(alpha = 0.08f) else Color(0xFFFFF8E1)),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    "Status Kas Anda",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (unpaidWeeks == 0) GreenPositive else OrangeDark
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        if (unpaidWeeks == 0) {
+                                            Text(
+                                                "✓ Semua kas sudah LUNAS!",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = GreenPositive
+                                            )
+                                        } else {
+                                            Text(
+                                                "⚠ $unpaidWeeks minggu belum bayar",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = OrangeDark
+                                            )
+                                        }
+                                        Text(
+                                            "$userPaidWeeks / $userTotalWeeks minggu sudah dibayar",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextMedium
+                                        )
+                                    }
+                                    if (userDenda != null) {
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text(
+                                                "Denda",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = RedNegative
+                                            )
+                                            Text(
+                                                "Rp ${formatRupiah(userDenda!!.dendaAmount)}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = RedNegative
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
                     // Chart Card
                     if (d.weeklyKasIncome.isNotEmpty()) {
