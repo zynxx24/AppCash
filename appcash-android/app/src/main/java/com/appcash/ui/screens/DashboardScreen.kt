@@ -297,7 +297,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = if (unpaidWeeks == 0) GreenPositive.copy(alpha = 0.08f) else Color(0xFFFFF8E1)),
+                            colors = CardDefaults.cardColors(containerColor = if (unpaidWeeks == 0) Color(0xFFE8F5E9) else Color(0xFFFFF8E1)),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

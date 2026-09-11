@@ -429,7 +429,7 @@ fun AdminPaymentDialog(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = OrangePrimary.copy(alpha = 0.05f))
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
