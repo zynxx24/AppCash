@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -1098,20 +1099,89 @@ fun PaymentDateCard(
 }
 
 /**
- * Helper to load profile photo from drawable resources.
- * Maps member ID → R.drawable.student_<id>
+ * Global LRU bitmap cache for student avatars.
+ * Stores pre-decoded, downsampled ImageBitmap instances keyed by
+ * "resId_targetPx" to avoid redundant BitmapFactory decoding cycles.
+ * Limited to 20 entries (~200KB max at 200x200) to balance memory vs cache hits.
+ */
+private val avatarBitmapCache = object : LinkedHashMap<String, androidx.compose.ui.graphics.ImageBitmap>(20, 0.75f, true) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, androidx.compose.ui.graphics.ImageBitmap>?): Boolean {
+        return size > 20
+    }
+}
+
+/**
+ * Calculates the optimal BitmapFactory inSampleSize power-of-2 factor.
+ * Subsamples the image so the decoded bitmap's dimensions roughly match
+ * the target display size, reducing memory allocation by up to 16x.
+ *
+ * @param outWidth  Original image width from BitmapFactory.Options.outWidth
+ * @param outHeight Original image height from BitmapFactory.Options.outHeight
+ * @param reqSize   Target display size in pixels
+ * @return Power-of-2 sample size (1, 2, 4, 8, etc.)
+ */
+private fun calculateInSampleSize(outWidth: Int, outHeight: Int, reqSize: Int): Int {
+    var inSampleSize = 1
+    if (outHeight > reqSize || outWidth > reqSize) {
+        val halfHeight = outHeight / 2
+        val halfWidth = outWidth / 2
+        while ((halfHeight / inSampleSize) >= reqSize && (halfWidth / inSampleSize) >= reqSize) {
+            inSampleSize *= 2
+        }
+    }
+    return inSampleSize
+}
+
+/**
+ * Performance-optimized composable for rendering student profile photos.
+ *
+ * Optimization pipeline:
+ * 1. Resolves drawable resource ID via cached `remember(memberId)`
+ * 2. Uses BitmapFactory.Options.inJustDecodeBounds to read image dimensions
+ *    WITHOUT allocating any pixel memory (zero-copy metadata read)
+ * 3. Calculates power-of-2 inSampleSize to subsample the JPEG at decode time,
+ *    reducing memory allocation proportional to (1/inSampleSize²)
+ * 4. Decoded ImageBitmap is stored in a global LRU LinkedHashMap cache
+ *    keyed by "resId_targetPx", eliminating redundant decode operations
+ *    when the same avatar appears on multiple screens or recomposes
+ * 5. Falls back to a styled initial-letter circle if no photo resource exists
+ *
+ * @param memberId Student member ID, mapped to R.drawable.student_{memberId}
+ * @param size     Display size in dp (converted to px for sampling calculation)
  */
 @Composable
 fun StudentAvatar(memberId: Int, size: Int = 44) {
     val context = LocalContext.current
+    val density = LocalContext.current.resources.displayMetrics.density
+    val targetPx = (size * density).toInt()
+
+    // Resolve drawable resource ID once per memberId (cached across recompositions)
     val resId = remember(memberId) {
         val resName = "student_$memberId"
         context.resources.getIdentifier(resName, "drawable", context.packageName)
     }
 
     if (resId != 0) {
+        // Decode and cache the bitmap with subsampling for the target display size
+        val imageBitmap = remember(resId, targetPx) {
+            val cacheKey = "${resId}_$targetPx"
+            avatarBitmapCache.getOrPut(cacheKey) {
+                val options = android.graphics.BitmapFactory.Options().apply {
+                    // Phase 1: Decode bounds only (no pixel allocation)
+                    inJustDecodeBounds = true
+                }
+                android.graphics.BitmapFactory.decodeResource(context.resources, resId, options)
+
+                // Phase 2: Calculate optimal subsample ratio and decode pixels
+                options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, targetPx)
+                options.inJustDecodeBounds = false
+                val bitmap = android.graphics.BitmapFactory.decodeResource(context.resources, resId, options)
+                bitmap.asImageBitmap()
+            }
+        }
+
         Image(
-            painter = painterResource(id = resId),
+            bitmap = imageBitmap,
             contentDescription = "Foto Profil",
             modifier = Modifier
                 .size(size.dp)
@@ -1119,7 +1189,7 @@ fun StudentAvatar(memberId: Int, size: Int = 44) {
             contentScale = ContentScale.Crop
         )
     } else {
-        // Fallback: initial letter
+        // Fallback: styled circle with member ID initial
         Box(
             modifier = Modifier
                 .size(size.dp)

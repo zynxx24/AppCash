@@ -173,25 +173,29 @@ fun MainContent(repository: AppCashRepository, isAdmin: Boolean, onLogout: () ->
     ) { innerPadding ->
         HorizontalPager(
             state = pagerState,
+            beyondBoundsPageCount = 1, // Only pre-compose 1 neighbor page to reduce memory
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) { page ->
-            if (isAdmin) {
-                when (page) {
-                    0 -> PaymentsScreen(repository = repository, isAdmin = true)
-                    1 -> ExpensesScreen(repository = repository, isAdmin = true)
-                    2 -> DashboardScreen(repository = repository, isAdmin = true)
-                    3 -> MembersScreen(repository = repository, isAdmin = true)
-                    4 -> ProfileScreen(repository = repository, isAdmin = true, onLogout = onLogout)
-                }
-            } else {
-                when (page) {
-                    0 -> PaymentsScreen(repository = repository, isAdmin = false)
-                    1 -> ExpensesScreen(repository = repository, isAdmin = false)
-                    2 -> DashboardScreen(repository = repository, isAdmin = false)
-                    3 -> MembersScreen(repository = repository, isAdmin = false)
-                    4 -> ProfileScreen(repository = repository, isAdmin = false, onLogout = onLogout)
+            // key(page) ensures each page is independently composed/disposed
+            key(page) {
+                if (isAdmin) {
+                    when (page) {
+                        0 -> PaymentsScreen(repository = repository, isAdmin = true)
+                        1 -> ExpensesScreen(repository = repository, isAdmin = true)
+                        2 -> DashboardScreen(repository = repository, isAdmin = true)
+                        3 -> MembersScreen(repository = repository, isAdmin = true)
+                        4 -> ProfileScreen(repository = repository, isAdmin = true, onLogout = onLogout)
+                    }
+                } else {
+                    when (page) {
+                        0 -> PaymentsScreen(repository = repository, isAdmin = false)
+                        1 -> ExpensesScreen(repository = repository, isAdmin = false)
+                        2 -> DashboardScreen(repository = repository, isAdmin = false)
+                        3 -> MembersScreen(repository = repository, isAdmin = false)
+                        4 -> ProfileScreen(repository = repository, isAdmin = false, onLogout = onLogout)
+                    }
                 }
             }
         }
