@@ -35,11 +35,13 @@ fun ProfileScreen(
     var profile by remember { mutableStateOf<UserProfile?>(null) }
     var dendaInfo by remember { mutableStateOf<DendaInfo?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var currentMemberId by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         repository.getCurrentUser().fold(
             onSuccess = { profile = it; loading = false },
             onFailure = { loading = false }
@@ -183,7 +185,7 @@ fun ProfileScreen(
                         )
                     }
                     Text(
-                        "Rp ${String.format("%,d", dendaInfo!!.dendaAmount)}",
+                        "Rp ${formatRupiah(dendaInfo!!.dendaAmount)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = RedNegative
@@ -204,8 +206,8 @@ fun ProfileScreen(
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
-                // Edit Profile
-                TextButton(
+                // Edit Profile (admin tidak punya data anggota, jadi hanya siswa yang bisa edit)
+                if (!isAdmin) TextButton(
                     onClick = { showEditDialog = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -229,16 +231,11 @@ fun ProfileScreen(
                     }
                 }
 
-                HorizontalDivider(color = GreyBorder)
+                if (!isAdmin) HorizontalDivider(color = GreyBorder)
 
                 // Logout
                 TextButton(
-                    onClick = {
-                        scope.launch {
-                            repository.logout()
-                            onLogout()
-                        }
-                    },
+                    onClick = { showLogoutConfirm = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -267,7 +264,7 @@ fun ProfileScreen(
 
         // App version
         Text(
-            "AppCash v2.0 • XII PPLG",
+            "AppCash v${com.appcash.BuildConfig.VERSION_NAME} • XII PPLG",
             modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.bodySmall,
             color = TextMuted,
@@ -275,6 +272,29 @@ fun ProfileScreen(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            shape = RoundedCornerShape(20.dp),
+            title = { Text("Keluar dari AppCash?", fontWeight = FontWeight.Bold, color = OrangePrimary) },
+            text = { Text("Kamu perlu login lagi untuk masuk.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutConfirm = false
+                        scope.launch {
+                            repository.logout()
+                            onLogout()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedNegative),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("Keluar", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { showLogoutConfirm = false }) { Text("Batal", color = OrangePrimary) } }
+        )
     }
 
     // Edit Profile Dialog
@@ -338,7 +358,8 @@ private fun EditProfileDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Profil", fontWeight = FontWeight.Bold) },
+        shape = RoundedCornerShape(20.dp),
+        title = { Text("Edit Profil", fontWeight = FontWeight.Bold, color = OrangePrimary) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!isAdmin) {
@@ -352,9 +373,10 @@ private fun EditProfileDialog(
                 }
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = { phone = it.filter { c -> c.isDigit() || c == '+' } },
                     label = { Text("No. Telepon") },
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
                     singleLine = true
                 )
                 OutlinedTextField(
@@ -367,13 +389,18 @@ private fun EditProfileDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(name, phone, bio) }) {
-                Text("Simpan")
+            Button(
+                onClick = { onSave(name, phone, bio) },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text("Batal", color = OrangePrimary)
             }
         }
     )

@@ -1,7 +1,13 @@
 package com.appcash.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.res.painterResource
+import com.appcash.R
+import com.appcash.ui.theme.orangeCard
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -40,6 +46,8 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -57,17 +65,17 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // App Logo / Title
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = OrangePrimary,
-                    modifier = Modifier.size(56.dp)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .orangeCard(18.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            "💸",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
+                    Image(
+                        painter = painterResource(R.drawable.ic_app_logo),
+                        contentDescription = "Logo AppCash",
+                        modifier = Modifier.size(96.dp)
+                    )
                 }
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -131,7 +139,7 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
                     // Email & Password Fields
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it; error = null },
+                        onValueChange = { email = it.trim(); error = null },
                         label = { Text("Email") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth(),

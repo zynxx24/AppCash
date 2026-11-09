@@ -22,6 +22,13 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,7 +50,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val app = application as AppCashApplication
-        val repository = AppCashRepository(app)
+        val repository = app.repository
 
         setContent {
             AppCashTheme {
@@ -60,8 +67,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppRoot(repository: AppCashRepository) {
-    var isLoggedIn by remember { mutableStateOf(false) }
-    var currentRole by remember { mutableStateOf("user") }
+    // Sesi disimpan di repository (singleton), jadi aman saat rotasi layar
+    var isLoggedIn by rememberSaveable { mutableStateOf(false) }
+    var currentRole by rememberSaveable { mutableStateOf("user") }
+    LaunchedEffect(Unit) {
+        // Jika activity dibuat ulang tapi sesi di repository sudah hilang (proses dimatikan), kembali ke login
+        if (isLoggedIn && !repository.hasToken()) isLoggedIn = false
+    }
 
     if (!isLoggedIn) {
         LoginScreen(
@@ -212,17 +224,17 @@ data class ScreenItem(
 // Admin: Kas, Pengeluaran, Dashboard, Anggota, Profil
 val bottomNavItemsAdmin = listOf(
     ScreenItem("payments", "Kas",        Icons.Outlined.ShoppingCart, Icons.Filled.ShoppingCart),
-    ScreenItem("expenses", "Pengeluaran",Icons.Outlined.Info,         Icons.Filled.Info),
+    ScreenItem("expenses", "Pengeluaran",Icons.Outlined.List,         Icons.Filled.List),
     ScreenItem("dashboard","Dashboard",  Icons.Outlined.Home,         Icons.Filled.Home),
-    ScreenItem("members",  "Anggota",    Icons.Outlined.Person,       Icons.Filled.Person),
-    ScreenItem("profile",  "Profil",     Icons.Outlined.Person,       Icons.Filled.Person)
+    ScreenItem("members",  "Anggota",    Icons.Outlined.Face,          Icons.Filled.Face),
+    ScreenItem("profile",  "Profil",     Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
 )
 
 // User: Kas, Pengeluaran, Dashboard, Anggota, Profil
 val bottomNavItemsUser = listOf(
     ScreenItem("payments", "Kas",        Icons.Outlined.ShoppingCart, Icons.Filled.ShoppingCart),
-    ScreenItem("expenses", "Pengeluaran",Icons.Outlined.Info,         Icons.Filled.Info),
+    ScreenItem("expenses", "Pengeluaran",Icons.Outlined.List,         Icons.Filled.List),
     ScreenItem("dashboard","Dashboard",  Icons.Outlined.Home,         Icons.Filled.Home),
-    ScreenItem("members",  "Anggota",    Icons.Outlined.Person,       Icons.Filled.Person),
-    ScreenItem("profile",  "Profil",     Icons.Outlined.Person,       Icons.Filled.Person)
+    ScreenItem("members",  "Anggota",    Icons.Outlined.Face,          Icons.Filled.Face),
+    ScreenItem("profile",  "Profil",     Icons.Outlined.AccountCircle, Icons.Filled.AccountCircle)
 )

@@ -1,5 +1,6 @@
 package com.appcash.ui.screens
 
+import com.appcash.ui.theme.orangeCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -71,7 +72,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
     var selectedMemberId by remember { mutableIntStateOf(0) }
     var expandedMemberDropdown by remember { mutableStateOf(false) }
     var amountText by remember { mutableStateOf("5000") }
-    var dateText by remember { mutableStateOf("20260904") }
+    var dateText by remember { mutableStateOf(java.time.LocalDate.now().toString().replace("-", "")) }
     var noteText by remember { mutableStateOf("") }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -79,8 +80,8 @@ fun PaymentInputScreen(repository: AppCashRepository) {
     val snackbar = remember { SnackbarHostState() }
 
     // Load data
-    LaunchedEffect(Unit) {
-        loading = true
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         repository.getMembers().fold(
             onSuccess = {
                 members = it
@@ -187,12 +188,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(OrangePrimary, OrangeLight)
-                                    )
-                                )
+                                .orangeCard(20.dp)
                                 .padding(20.dp)
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -273,7 +269,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
                                 // Amount Input
                                 OutlinedTextField(
                                     value = amountText,
-                                    onValueChange = { amountText = it.filter { c -> c.isDigit() } },
+                                    onValueChange = { amountText = it.filter { c -> c.isDigit() }.take(9) },
                                     label = { Text("Jumlah Pembayaran (Rp)") },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
@@ -326,7 +322,8 @@ fun PaymentInputScreen(repository: AppCashRepository) {
                                 Button(
                                     onClick = { showConfirmDialog = true },
                                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                                    enabled = selectedMember != null && amount > 0 && dateText.isNotBlank(),
+                                    enabled = selectedMember != null && amount > 0 && dateText.length == 8 &&
+                                        isValidDate("${dateText.take(4)}-${dateText.substring(4, 6)}-${dateText.takeLast(2)}"),
                                     colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                                     shape = RoundedCornerShape(14.dp)
                                 ) {
@@ -369,12 +366,7 @@ fun PaymentHistoryCard(record: PaymentRecord) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(OrangePrimary, OrangeLight)
-                )
-            )
+            .orangeCard(16.dp)
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

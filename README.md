@@ -8,7 +8,7 @@
 [![Target SDK](https://img.shields.io/badge/Target_SDK-35_%28Android_15/16%29-0284C7?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Compose-BOM_2024.02.00-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![APK Footprint](https://img.shields.io/badge/APK_Size-~8.7_MB-FF6B00?style=for-the-badge&logo=googleplay&logoColor=white)](#-optimasi-build--apk-footprint)
+[![APK Footprint](https://img.shields.io/badge/APK_Size-~4.8_MB-FF6B00?style=for-the-badge&logo=googleplay&logoColor=white)](#-optimasi-build--apk-footprint)
 
 **Aplikasi Android Native Modern & Offline-First untuk Pengelolaan Kas, Keuangan, serta Transaksi Digital Kelas XII PPLG (Rekayasa Perangkat Lunak).**
 
@@ -28,7 +28,7 @@
 3. **Pencatatan Otomatis & Terstruktur**: Mengeliminasi pembukuan manual dengan rekapitulasi pembayaran mingguan per siswa (M01 hingga M20).
 4. **Sistem Denda Otomatis**: Menerapkan denda 5% per bulan untuk setiap tunggakan kas mingguan guna menjaga kedisiplinan iuran kelas.
 5. **Autentikasi Berbasis Peran & Profil**: Sesi login terpisah untuk **Admin** (akses edit/full) dan **Siswa** (akses read-only) dilengkapi dengan halaman Profil pengguna dan fungsi Logout.
-6. **Performa Tinggi & Ringan**: Ukuran APK teroptimasi (**~8.7 MB**) dengan kompatibilitas dari Android 8.0 (Oreo) hingga Android 16 (One UI 8).
+6. **Performa Tinggi & Ringan**: Ukuran APK teroptimasi (**~4.8 MB**) dengan kompatibilitas dari Android 8.0 (Oreo) hingga Android 16 (One UI 8).
 
 ---
 
@@ -574,7 +574,7 @@ android {
    ```bash
    ./gradlew assembleRelease
    ```
-   *Hasil APK akan berada di directory `app/build/outputs/apk/release/app-release.apk` (Ukuran ~8.7 MB).*
+   *Hasil APK akan berada di directory `app/build/outputs/apk/release/app-release.apk` (Ukuran ~4.8 MB).*
 
 ---
 

@@ -1,10 +1,12 @@
 package com.appcash.ui.screens
 
+import com.appcash.ui.theme.orangeCard
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -41,8 +43,8 @@ fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
-        loading = true
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         error = null
         repository.getMembers().fold(
             onSuccess = { members = it },
@@ -92,7 +94,7 @@ fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = OrangePrimary)
-            error != null -> ErrorView(error = error!!, onRetry = {})
+            error != null -> ErrorView(error = error!!, onRetry = { repository.refresh() })
             else -> Column(modifier = Modifier.fillMaxSize()) {
                 // Page Header
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -105,12 +107,7 @@ fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(OrangePrimary, OrangeLight)
-                            )
-                        )
+                        .orangeCard(16.dp)
                         .padding(16.dp)
                 ) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -155,10 +152,19 @@ fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
 
                 // Members List
                 LazyColumn(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(filteredMembers) { member ->
+                    if (filteredMembers.isEmpty()) item {
+                        Text(
+                            "Siswa \"$searchQuery\" tidak ditemukan",
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                    items(filteredMembers, key = { it.id }) { member ->
                         MemberCard(member = member, index = members.indexOf(member) + 1, onClick = { selectedMemberForBio = member })
                     }
                     item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -174,12 +180,7 @@ fun MemberCard(member: Member, index: Int, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(OrangePrimary, OrangeLight)
-                )
-            )
+            .orangeCard(16.dp)
             .clickable(onClick = onClick)
             .padding(14.dp)
     ) {
@@ -195,7 +196,7 @@ fun MemberCard(member: Member, index: Int, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(member.phone, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
+                Text(member.nis, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.8f))
                 Text(member.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = Color.White)
                 Surface(shape = RoundedCornerShape(6.dp), color = Color.White.copy(alpha = 0.25f)) {
                     Text(
@@ -237,23 +238,18 @@ fun MemberBioDialog(member: Member, isAdmin: Boolean, onDismiss: () -> Unit, onE
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(OrangePrimary, OrangeLight)
-                            )
-                        )
+                        .orangeCard(14.dp)
                         .padding(14.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         BioPill("NIS", member.nis)
                         BioPill("Jabatan Kelas", member.role)
                         BioPill("Umur", member.umur)
-                        BioPill("Kontak WA", member.phone)
+                        BioPill("Kontak WA", member.phone.ifBlank { "-" })
                     }
                 }
                 Text("Bio & Catatan Siswa :", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = OrangePrimary)
-                Text(member.bio, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(member.bio.ifBlank { "Belum ada bio" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         confirmButton = {
@@ -269,8 +265,12 @@ fun MemberBioDialog(member: Member, isAdmin: Boolean, onDismiss: () -> Unit, onE
                     }
                 }
                 Button(
+                    enabled = member.phone.isNotBlank(),
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=${member.phone}"))
+                        // Normalisasi nomor: 0812xxx / +62812xxx -> 62812xxx
+                        val digits = member.phone.filter { it.isDigit() }
+                        val waNumber = if (digits.startsWith("0")) "62" + digits.drop(1) else digits
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$waNumber"))
                         try { context.startActivity(intent) } catch (e: Exception) {}
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
@@ -316,7 +316,10 @@ fun EditMemberDialog(member: Member, onDismiss: () -> Unit, onConfirm: (String, 
             Text("Edit Anggota", fontWeight = FontWeight.Bold, color = OrangePrimary)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
                     value = name, onValueChange = { name = it },
                     label = { Text("Nama") }, modifier = Modifier.fillMaxWidth(),
@@ -336,8 +339,9 @@ fun EditMemberDialog(member: Member, onDismiss: () -> Unit, onConfirm: (String, 
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
                 OutlinedTextField(
-                    value = phone, onValueChange = { phone = it },
-                    label = { Text("No. Telepon") }, modifier = Modifier.fillMaxWidth(),
+                    value = phone, onValueChange = { phone = it.filter { c -> c.isDigit() || c == '+' } },
+                    label = { Text("No. Telepon") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )

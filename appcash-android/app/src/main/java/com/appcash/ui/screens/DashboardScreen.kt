@@ -1,5 +1,6 @@
 package com.appcash.ui.screens
 
+import com.appcash.ui.theme.orangeCard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -59,8 +60,8 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
     var userDenda by remember { mutableStateOf<DendaInfo?>(null) }
     var currentMemberId by remember { mutableStateOf<Int?>(null) }
 
-    LaunchedEffect(Unit) {
-        loading = true
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         error = null
         repository.getDashboard().fold(
             onSuccess = { dashboard = it },
@@ -99,7 +100,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                 modifier = Modifier.align(Alignment.Center),
                 color = OrangePrimary
             )
-            error != null -> ErrorView(error = error!!, onRetry = {})
+            error != null -> ErrorView(error = error!!, onRetry = { repository.refresh() })
             dashboard != null -> {
                 val d = dashboard!!
                 Column(
@@ -140,12 +141,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(OrangePrimary, OrangeLight)
-                                )
-                            )
+                            .orangeCard(24.dp)
                             .padding(24.dp)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -158,6 +154,8 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                             Text(
                                 "Rp ${formatRupiah(d.totalBalance)}",
                                 fontSize = 34.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
@@ -185,6 +183,8 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                         ) {
                                             Text(
                                                 "Rp ${formatRupiah(d.totalKasIncome)}",
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color.White
@@ -208,6 +208,8 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                         )
                                         Text(
                                             "Rp ${formatRupiah(d.totalExpenseAmount)}",
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
@@ -231,12 +233,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(OrangePrimary, OrangeLight)
-                                    )
-                                )
+                                .orangeCard(16.dp)
                                 .padding(14.dp)
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -260,12 +257,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(OrangePrimary, OrangeLight)
-                                    )
-                                )
+                                .orangeCard(16.dp)
                                 .padding(14.dp)
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -312,7 +304,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         if (unpaidWeeks == 0) {
                                             Text(
                                                 "✓ Semua kas sudah LUNAS!",
@@ -396,8 +388,8 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .clickable { dendaExpanded = !dendaExpanded },
+                                .padding(horizontal = 16.dp),
+                            onClick = { dendaExpanded = !dendaExpanded },
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(2.dp)
@@ -468,7 +460,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                     exit = shrinkVertically()
                                 ) {
                                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Divider(color = RedNegative.copy(alpha = 0.2f))
+                                        HorizontalDivider(color = RedNegative.copy(alpha = 0.2f))
                                         Text(
                                             "Detail Per Anggota:",
                                             style = MaterialTheme.typography.labelMedium,
@@ -559,7 +551,8 @@ fun WeeklyKasLineChart(
     expenses: List<Int>,
     modifier: Modifier = Modifier
 ) {
-    val maxVal = (incomes.maxOrNull() ?: 1).coerceAtLeast(expenses.maxOrNull() ?: 1).toFloat()
+    // coerceAtLeast(1) mencegah pembagian dengan nol saat semua nilai 0
+    val maxVal = maxOf(incomes.maxOrNull() ?: 0, expenses.maxOrNull() ?: 0, 1).toFloat()
     val greenColor = Color(0xFF22C55E)
     val redColor = Color(0xFFEF4444)
 
@@ -684,5 +677,5 @@ fun ErrorView(error: String, onRetry: () -> Unit) {
 }
 
 fun formatRupiah(value: Int): String {
-    return "%,d".format(value).replace(',', '.')
+    return String.format(java.util.Locale.US, "%,d", value).replace(',', '.')
 }

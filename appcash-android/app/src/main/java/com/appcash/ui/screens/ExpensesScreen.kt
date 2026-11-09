@@ -1,5 +1,6 @@
 package com.appcash.ui.screens
 
+import com.appcash.ui.theme.orangeCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,11 +38,12 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
     var loading by remember { mutableStateOf(true) }
     var showAdd by remember { mutableStateOf(false) }
     var editingExpense by remember { mutableStateOf<Expense?>(null) }
+    var deletingExpense by remember { mutableStateOf<Expense?>(null) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
-        loading = true
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         error = null
         repository.getExpenses().fold(
             onSuccess = { expenses = it },
@@ -63,6 +65,34 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
                 )
             }
         })
+    }
+
+    deletingExpense?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deletingExpense = null },
+            shape = RoundedCornerShape(20.dp),
+            title = { Text("Hapus Pengeluaran?", fontWeight = FontWeight.Bold, color = OrangePrimary) },
+            text = { Text("\"${target.description}\" sebesar Rp ${formatRupiah(target.amount)} akan dihapus.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        deletingExpense = null
+                        scope.launch {
+                            repository.deleteExpense(target.id).fold(
+                                onSuccess = {
+                                    expenses = expenses.filter { it.id != target.id }
+                                    snackbar.showSnackbar("Pengeluaran dihapus")
+                                },
+                                onFailure = { snackbar.showSnackbar("Gagal menghapus") }
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedNegative),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("Hapus", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { deletingExpense = null }) { Text("Batal", color = OrangePrimary) } }
+        )
     }
 
     if (editingExpense != null) {
@@ -88,7 +118,7 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = OrangePrimary)
-            error != null -> ErrorView(error = error!!, onRetry = {})
+            error != null -> ErrorView(error = error!!, onRetry = { repository.refresh() })
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Page Header
@@ -98,7 +128,8 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
                     }
 
                     LazyColumn(
-                        modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(expenses) { expense ->
@@ -106,17 +137,15 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
                                 expense = expense,
                                 isAdmin = isAdmin,
                                 onEdit = { editingExpense = expense },
-                                onDelete = {
-                                    scope.launch {
-                                        repository.deleteExpense(expense.id).fold(
-                                            onSuccess = {
-                                                expenses = expenses.filter { it.id != expense.id }
-                                                snackbar.showSnackbar("Pengeluaran dihapus")
-                                            },
-                                            onFailure = { snackbar.showSnackbar("Gagal menghapus") }
-                                        )
-                                    }
-                                }
+                                onDelete = { deletingExpense = expense }
+                            )
+                        }
+                        if (expenses.isEmpty()) item {
+                            Text(
+                                "Belum ada pengeluaran",
+                                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
                         item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -151,12 +180,7 @@ fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDe
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(OrangePrimary, OrangeLight)
-                )
-            )
+            .orangeCard(16.dp)
             .padding(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -166,7 +190,7 @@ fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDe
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "-${formatRupiah(expense.amount)}",
+                    "-Rp ${formatRupiah(expense.amount)}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White
@@ -229,8 +253,9 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
                 OutlinedTextField(
-                    value = amount, onValueChange = { amount = it.filter { c -> c.isDigit() } },
-                    label = { Text("Jumlah (Rp)") }, modifier = Modifier.fillMaxWidth(),
+                    value = amount, onValueChange = { amount = it.filter { c -> c.isDigit() }.take(9) },
+                    label = { Text("Jumlah (Rp)") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
@@ -246,6 +271,8 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary),
                     singleLine = true,
+                    isError = date.length == 8 && !isValidDate("${date.take(4)}-${date.substring(4, 6)}-${date.takeLast(2)}"),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     visualTransformation = DateVisualTransformation()
                 )
             }
@@ -255,7 +282,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
                 onClick = {
                     val amt = amount.toIntOrNull() ?: 0
                     val formattedDate = date.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d }
-                    if (description.isNotBlank() && amt > 0 && date.length == 8) onConfirm(description, amt, formattedDate)
+                    if (description.isNotBlank() && amt > 0 && isValidDate(formattedDate)) onConfirm(description, amt, formattedDate)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
@@ -289,8 +316,9 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
                 OutlinedTextField(
-                    value = amount, onValueChange = { amount = it.filter { c -> c.isDigit() } },
-                    label = { Text("Jumlah (Rp)") }, modifier = Modifier.fillMaxWidth(),
+                    value = amount, onValueChange = { amount = it.filter { c -> c.isDigit() }.take(9) },
+                    label = { Text("Jumlah (Rp)") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary)
                 )
@@ -306,6 +334,8 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = OrangePrimary, focusedLabelColor = OrangePrimary),
                     singleLine = true,
+                    isError = date.length == 8 && !isValidDate("${date.take(4)}-${date.substring(4, 6)}-${date.takeLast(2)}"),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     visualTransformation = DateVisualTransformation()
                 )
             }
@@ -315,7 +345,7 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
                 onClick = {
                     val amt = amount.toIntOrNull() ?: 0
                     val formattedDate = date.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d }
-                    if (description.isNotBlank() && amt > 0 && date.length == 8) onConfirm(description, amt, formattedDate)
+                    if (description.isNotBlank() && amt > 0 && isValidDate(formattedDate)) onConfirm(description, amt, formattedDate)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
@@ -326,3 +356,7 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
         }
     )
 }
+
+/** true jika tanggal YYYY-MM-DD benar-benar ada di kalender (mis. 2026-02-30 ditolak). */
+fun isValidDate(value: String): Boolean =
+    runCatching { java.time.LocalDate.parse(value) }.isSuccess

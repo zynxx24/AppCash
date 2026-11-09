@@ -1,5 +1,6 @@
 package com.appcash.ui.screens
 
+import com.appcash.ui.theme.orangeCard
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -93,8 +94,8 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
         }
     }
 
-    LaunchedEffect(Unit) {
-        loading = true
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         error = null
         repository.getPayments().fold(
             onSuccess = { payments = it },
@@ -161,7 +162,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = OrangePrimary)
-            error != null -> ErrorView(error = error!!, onRetry = {})
+            error != null -> ErrorView(error = error!!, onRetry = { repository.refresh() })
             payments != null -> {
                 val p = payments!!
                 val d = dashboard
@@ -201,7 +202,8 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
                         }
                     } else {
                         LazyColumn(
-                            modifier = Modifier.padding(horizontal = 16.dp),
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             itemsIndexed(p.dates) { idx, date ->
@@ -238,8 +240,7 @@ fun AdminHeroCard(d: Dashboard?) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(colors = listOf(OrangePrimary, OrangeLight)))
+            .orangeCard(20.dp)
             .padding(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -303,7 +304,7 @@ fun AdminPaymentDialog(
 
     val selectedMember = members.find { it.id == selectedMemberId } ?: members.firstOrNull()
     val memberKey = selectedMember?.id?.toString() ?: "1"
-    val memberRecords = records.getOrPut(memberKey) { mutableMapOf() }
+    val memberRecords: Map<String, Boolean> = records[memberKey] ?: emptyMap()
     val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true }
     val selectedDates = remember { mutableStateMapOf<String, Boolean>() }
     val selectedCount = selectedDates.count { it.value }
@@ -425,7 +426,7 @@ fun AdminPaymentDialog(
                 }
 
                 if (selectedCount > 0) {
-                    Divider()
+                    HorizontalDivider()
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -436,7 +437,7 @@ fun AdminPaymentDialog(
                                 Text("Kas ($selectedCount minggu):", style = MaterialTheme.typography.bodySmall, color = TextMedium)
                                 Text("Rp ${formatRupiah(kasAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
                             }
-                            Divider(modifier = Modifier.padding(vertical = 4.dp))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Total:", fontWeight = FontWeight.Bold)
                                 Text("Rp ${formatRupiah(kasAmount)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = OrangePrimary)
@@ -449,10 +450,11 @@ fun AdminPaymentDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val updated = memberRecords.toMutableMap()
                     selectedDates.forEach { (date, isSelected) ->
-                        if (isSelected) memberRecords[date] = true
+                        if (isSelected) updated[date] = true
                     }
-                    records[memberKey] = memberRecords
+                    records[memberKey] = updated
                     onConfirm(PaymentsWrapper(dates = wrapper.dates, records = records))
                 },
                 enabled = selectedCount > 0,
@@ -531,27 +533,25 @@ fun AdminWeekDetailDialog(
             ) {
                 members.forEach { member ->
                     val memberKey = member.id.toString()
-                    val memberMap = records.getOrPut(memberKey) { mutableMapOf() }
-                    val isPaid = memberMap[date] == true
+                    // Jangan getOrPut di sini: menulis state saat composition menyebabkan bug
+                    val isPaid = records[memberKey]?.get(date) == true
+                    // Simpan map BARU agar SnapshotStateMap mendeteksi perubahan & checkbox ikut berubah
+                    val setPaid: (Boolean) -> Unit = { paid ->
+                        records[memberKey] = (records[memberKey] ?: emptyMap()).toMutableMap().apply { put(date, paid) }
+                    }
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .background(if (isPaid) GreenPositive.copy(alpha = 0.08f) else RedNegative.copy(alpha = 0.04f))
-                            .clickable {
-                                memberMap[date] = !isPaid
-                                records[memberKey] = memberMap
-                            }
+                            .clickable { setPaid(!isPaid) }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
                             checked = isPaid,
-                            onCheckedChange = { checked ->
-                                memberMap[date] = checked
-                                records[memberKey] = memberMap
-                            },
+                            onCheckedChange = { checked -> setPaid(checked) },
                             colors = CheckboxDefaults.colors(checkedColor = GreenPositive),
                             modifier = Modifier.size(36.dp)
                         )
@@ -616,8 +616,8 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
-        loading = true
+    val dataVersion by repository.version.collectAsState()
+    LaunchedEffect(dataVersion) {
         error = null
         currentMemberId = repository.getCurrentMemberId()
         repository.getPayments().fold(
@@ -669,7 +669,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = OrangePrimary)
-            error != null -> ErrorView(error = error!!, onRetry = {})
+            error != null -> ErrorView(error = error!!, onRetry = { repository.refresh() })
             payments != null -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -689,8 +689,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Brush.linearGradient(colors = listOf(OrangePrimary, OrangeLight)))
+                                .orangeCard(20.dp)
                                 .padding(16.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -824,7 +823,7 @@ fun UserBniPaymentDialog(
     }
 
     val memberKey = currentMemberId.toString()
-    val memberRecords = records.getOrPut(memberKey) { mutableMapOf() }
+    val memberRecords: Map<String, Boolean> = records[memberKey] ?: emptyMap()
     val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true }
     val selectedDates = remember { mutableStateMapOf<String, Boolean>() }
     val selectedCount = selectedDates.count { it.value }
@@ -965,7 +964,7 @@ fun UserBniPaymentDialog(
                     }
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 // Payment Breakdown
                 Card(
@@ -984,7 +983,7 @@ fun UserBniPaymentDialog(
                                 Text("Rp ${formatRupiah(dendaAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = RedNegative)
                             }
                         }
-                        Divider(modifier = Modifier.padding(vertical = 4.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                             Text("Total Transfer:", fontWeight = FontWeight.Bold)
                             Text("Rp ${formatRupiah(totalAmount)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = OrangePrimary)
@@ -996,7 +995,7 @@ fun UserBniPaymentDialog(
                     onClick = {
                         val memberName = currentMember.name
                         val dendaText = if (dendaAmount > 0) " (termasuk denda Rp ${formatRupiah(dendaAmount)})" else ""
-                        val message = "Halo Admin Kas XII PPLG, saya $memberName telah transfer iuran kas via BNI 1892077413 sebesar Rp ${formatRupiah(totalAmount)} ($selectedCount minggu$dendaText). Mohon konfirmasi."
+                        val message = "Halo Admin Kas XII PPLG, saya $memberName telah membayar iuran kas via ${if (showQris) "QRIS" else "BNI 1892077413"} sebesar Rp ${formatRupiah(totalAmount)} ($selectedCount minggu$dendaText). Mohon konfirmasi."
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=6285600487433&text=${Uri.encode(message)}"))
                         try { context.startActivity(intent) } catch (e: Exception) {
                             Toast.makeText(context, "Membuka WhatsApp Admin...", Toast.LENGTH_SHORT).show()
@@ -1021,10 +1020,11 @@ fun UserBniPaymentDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val updated = memberRecords.toMutableMap()
                     selectedDates.forEach { (date, isSelected) ->
-                        if (isSelected) memberRecords[date] = true
+                        if (isSelected) updated[date] = true
                     }
-                    records[memberKey] = memberRecords
+                    records[memberKey] = updated
                     onConfirm(PaymentsWrapper(dates = wrapper.dates, records = records))
                 },
                 enabled = isWaConfirmed && selectedCount > 0,
@@ -1059,8 +1059,7 @@ fun PaymentDateCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(colors = listOf(OrangePrimary, OrangeLight)))
+            .orangeCard(16.dp)
             .clickable { onClick() }
             .padding(16.dp)
     ) {
@@ -1161,11 +1160,12 @@ fun StudentAvatar(memberId: Int, size: Int = 44) {
         context.resources.getIdentifier(resName, "drawable", context.packageName)
     }
 
-    if (resId != 0) {
-        // Decode and cache the bitmap with subsampling for the target display size
-        val imageBitmap = remember(resId, targetPx) {
-            val cacheKey = "${resId}_$targetPx"
-            avatarBitmapCache.getOrPut(cacheKey) {
+    // Decode and cache the bitmap with subsampling for the target display size.
+    // Null jika file rusak / gagal didecode -> tampilkan fallback, bukan crash.
+    val imageBitmap = remember(resId, targetPx) {
+        if (resId == 0) return@remember null
+        val cacheKey = "${resId}_$targetPx"
+        avatarBitmapCache[cacheKey] ?: runCatching {
                 val options = android.graphics.BitmapFactory.Options().apply {
                     // Phase 1: Decode bounds only (no pixel allocation)
                     inJustDecodeBounds = true
@@ -1175,11 +1175,11 @@ fun StudentAvatar(memberId: Int, size: Int = 44) {
                 // Phase 2: Calculate optimal subsample ratio and decode pixels
                 options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, targetPx)
                 options.inJustDecodeBounds = false
-                val bitmap = android.graphics.BitmapFactory.decodeResource(context.resources, resId, options)
-                bitmap.asImageBitmap()
-            }
-        }
+                android.graphics.BitmapFactory.decodeResource(context.resources, resId, options)?.asImageBitmap()
+        }.getOrNull()?.also { avatarBitmapCache[cacheKey] = it }
+    }
 
+    if (imageBitmap != null) {
         Image(
             bitmap = imageBitmap,
             contentDescription = "Foto Profil",
@@ -1213,7 +1213,7 @@ fun MiniBarChart(
     expenses: List<Int>,
     modifier: Modifier = Modifier
 ) {
-    val maxVal = (incomes.maxOrNull() ?: 1).coerceAtLeast(expenses.maxOrNull() ?: 1).toFloat()
+    val maxVal = maxOf(incomes.maxOrNull() ?: 0, expenses.maxOrNull() ?: 0, 1).toFloat()
 
     Canvas(modifier = modifier) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas

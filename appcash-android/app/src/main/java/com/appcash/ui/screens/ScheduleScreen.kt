@@ -1,5 +1,6 @@
 package com.appcash.ui.screens
 
+import com.appcash.ui.theme.orangeCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,7 +62,10 @@ fun ScheduleScreen() {
     )
 
     val days = listOf("Senin", "Selasa", "Rabu", "Kamis", "Jumat")
-    var currentDayIndex by remember { mutableStateOf(0) }
+    // Mulai dari hari ini (Sabtu/Minggu -> Senin)
+    var currentDayIndex by remember {
+        mutableStateOf((java.time.LocalDate.now().dayOfWeek.value - 1).takeIf { it in 0..4 } ?: 0)
+    }
     val currentDay = days[currentDayIndex]
     val daySchedule = fullSchedule.filter { it.day == currentDay }
 
@@ -81,12 +85,7 @@ fun ScheduleScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(OrangePrimary, OrangeLight)
-                    )
-                )
+                .orangeCard(16.dp)
                 .padding(16.dp)
         ) {
             Row(
@@ -129,7 +128,8 @@ fun ScheduleScreen() {
                 )
 
                 LazyColumn(
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(daySchedule) { item ->
@@ -192,8 +192,8 @@ fun ScheduleScreen() {
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = OrangePrimary),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, OrangePrimary)
-                    ) { Text("Back", fontWeight = FontWeight.Bold) }
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, if (currentDayIndex > 0) OrangePrimary else Color(0xFFE0E0E0))
+                    ) { Text("Sebelumnya", fontWeight = FontWeight.Bold) }
 
                     Button(
                         onClick = { if (currentDayIndex < days.size - 1) currentDayIndex++ },
@@ -201,7 +201,7 @@ fun ScheduleScreen() {
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary)
-                    ) { Text("Next", fontWeight = FontWeight.Bold, color = Color.White) }
+                    ) { Text("Berikutnya", fontWeight = FontWeight.Bold, color = Color.White) }
                 }
             }
         }

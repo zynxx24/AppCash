@@ -2,12 +2,22 @@ package com.appcash.data.repository
 
 import android.content.Context
 import com.appcash.data.model.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 class AppCashRepository(private val context: Context) {
+
+    companion object {
+        const val DENDA_RATE_PERCENT = 5
+    }
 
     // --- SESSION STATE ---
     private var currentRole: String? = null
@@ -16,8 +26,53 @@ class AppCashRepository(private val context: Context) {
     private var adminEmail: String = ""
 
     // --- ADMIN CREDENTIALS ---
+    // Password disimpan sebagai hash SHA-256 (bukan plaintext). Nilai = sha256("admin123")
     private val ADMIN_EMAIL = "admin@gmail.com"
-    private val ADMIN_PASSWORD = "admin123"
+    private val ADMIN_PASSWORD_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
+
+    private fun sha256(text: String): String =
+        MessageDigest.getInstance("SHA-256").digest(text.toByteArray())
+            .joinToString("") { "%02x".format(it) }
+
+    // --- PERSISTENCE (SharedPreferences + Gson) ---
+    // Data tetap tersimpan walau aplikasi ditutup / layar diputar.
+    private val prefs = context.getSharedPreferences("appcash_db", Context.MODE_PRIVATE)
+    private val gson = Gson()
+
+    private data class Snapshot(
+        val members: List<Member>,
+        val payments: Map<String, Map<String, Boolean>>,
+        val expenses: List<Expense>,
+        val history: List<PaymentRecord>,
+        val config: Config
+    )
+
+    // Sinyal perubahan data: layar memuat ulang otomatis setiap kali nilainya naik
+    private val _version = MutableStateFlow(0)
+    val version: StateFlow<Int> = _version.asStateFlow()
+    fun refresh() { _version.value++ }
+
+    private fun persist() {
+        _version.value++
+        val snap = Snapshot(membersList, paymentRecords, expensesList, paymentHistoryList, configData)
+        prefs.edit().putString("snapshot", gson.toJson(snap)).apply()
+    }
+
+    private fun restore(): Boolean {
+        val json = prefs.getString("snapshot", null) ?: return false
+        return try {
+            val snap = gson.fromJson<Snapshot>(json, object : TypeToken<Snapshot>() {}.type) ?: return false
+            membersList.clear(); membersList.addAll(snap.members)
+            paymentRecords.clear()
+            snap.payments.forEach { (k, v) -> paymentRecords[k] = v.toMutableMap() }
+            expensesList.clear(); expensesList.addAll(snap.expenses)
+            paymentHistoryList.clear(); paymentHistoryList.addAll(snap.history)
+            configData = snap.config
+            true
+        } catch (e: Exception) {
+            false // data korup → pakai data awal
+        }
+    }
 
     // --- IN-MEMORY STANDALONE DATABASE (XII PPLG) ---
     private val membersList = mutableListOf(
@@ -101,6 +156,10 @@ class AppCashRepository(private val context: Context) {
     )
 
     init {
+        if (!restore()) seedPayments()
+    }
+
+    private fun seedPayments() {
         membersList.forEach { member ->
             val memberMap = mutableMapOf<String, Boolean>()
             datesList.forEachIndexed { index, date ->
@@ -127,13 +186,9 @@ class AppCashRepository(private val context: Context) {
         Result.success(Pair(paidWeeks, totalWeeks))
     }
 
-    suspend fun login(@Suppress("UNUSED_PARAMETER") req: LoginRequest): Result<LoginResponse> = withContext(Dispatchers.IO) {
-        Result.success(LoginResponse(token = "dummy_token", role = "admin"))
-    }
-
     suspend fun login(role: String, email: String? = null, password: String? = null, memberId: Int? = null, @Suppress("UNUSED_PARAMETER") name: String? = null): Result<LoginResponse> = withContext(Dispatchers.IO) {
         if (role == "admin") {
-            if (email == ADMIN_EMAIL && password == ADMIN_PASSWORD) {
+            if (email?.trim()?.lowercase() == ADMIN_EMAIL && password != null && sha256(password) == ADMIN_PASSWORD_HASH) {
                 currentRole = "admin"
                 isLoggedIn = true
                 adminEmail = email
@@ -203,7 +258,8 @@ class AppCashRepository(private val context: Context) {
         } else {
             val idx = membersList.indexOfFirst { it.id == currentMemberId }
             if (idx >= 0) {
-                membersList[idx] = membersList[idx].copy(name = name, phone = phone, bio = bio)
+                membersList[idx] = membersList[idx].copy(name = name.trim(), phone = phone.trim(), bio = bio.trim())
+                persist()
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("User not found"))
@@ -232,80 +288,41 @@ class AppCashRepository(private val context: Context) {
         return try { LocalDate.of(2026, month, day) } catch (e: Exception) { null }
     }
 
-    suspend fun getDendaForAllMembers(): Result<List<DendaInfo>> = withContext(Dispatchers.IO) {
-        val dendaList = mutableListOf<DendaInfo>()
-        val kasPerWeek = configData.kasAmount
-        val today = LocalDate.now()
-
-        membersList.forEach { member ->
-            val memberPayments = paymentRecords[member.id.toString()] ?: emptyMap()
-            var totalDendaAmount = 0
-            var unpaidMonthsCount = 0
-            val unpaidMonthsSet = mutableSetOf<Int>()
-
-            datesList.forEach { date ->
-                if (memberPayments[date] != true) {
-                    val dueDate = parseDateLabel(date)
-                    if (dueDate != null && today.isAfter(dueDate)) {
-                        val monthsLate = ChronoUnit.MONTHS.between(dueDate, today).toInt().coerceAtLeast(0)
-                        if (monthsLate > 0) {
-                            val dendaForWeek = (kasPerWeek * 5.0 * monthsLate / 100).toInt()
-                            totalDendaAmount += dendaForWeek
-                            unpaidMonthsSet.add(dueDate.monthValue)
-                        }
-                    }
-                }
-            }
-            unpaidMonthsCount = unpaidMonthsSet.size
-
-            if (totalDendaAmount > 0) {
-                dendaList.add(DendaInfo(
-                    memberId = member.id,
-                    memberName = member.name,
-                    unpaidMonths = unpaidMonthsCount,
-                    dendaPercentage = unpaidMonthsCount * 5.0,
-                    dendaAmount = totalDendaAmount
-                ))
+    /**
+     * Rumus denda: denda per minggu = kas x 5% x bulan_terlambat.
+     * Contoh: kas Rp5.000, telat 2 bulan → 5.000 x 5% x 2 = Rp500.
+     */
+    private fun calculateDenda(member: Member, today: LocalDate = LocalDate.now()): DendaInfo? {
+        val memberPayments = paymentRecords[member.id.toString()] ?: emptyMap()
+        var total = 0
+        val unpaidMonths = mutableSetOf<Int>()
+        datesList.forEach { date ->
+            if (memberPayments[date] == true) return@forEach
+            val due = parseDateLabel(date) ?: return@forEach
+            val monthsLate = ChronoUnit.MONTHS.between(due, today).toInt()
+            if (monthsLate > 0) {
+                total += configData.kasAmount * DENDA_RATE_PERCENT * monthsLate / 100
+                unpaidMonths.add(due.monthValue)
             }
         }
-        Result.success(dendaList)
+        if (total <= 0) return null
+        return DendaInfo(
+            memberId = member.id,
+            memberName = member.name,
+            unpaidMonths = unpaidMonths.size,
+            dendaPercentage = unpaidMonths.size * DENDA_RATE_PERCENT.toDouble(),
+            dendaAmount = total
+        )
+    }
+
+    suspend fun getDendaForAllMembers(): Result<List<DendaInfo>> = withContext(Dispatchers.IO) {
+        Result.success(membersList.mapNotNull { calculateDenda(it) })
     }
 
     suspend fun getDendaForMember(memberId: Int): Result<DendaInfo?> = withContext(Dispatchers.IO) {
         val member = membersList.find { it.id == memberId }
             ?: return@withContext Result.failure(Exception("Member not found"))
-        val memberPayments = paymentRecords[memberId.toString()] ?: emptyMap()
-        val kasPerWeek = configData.kasAmount
-        val today = LocalDate.now()
-
-        var totalDendaAmount = 0
-        val unpaidMonthsSet = mutableSetOf<Int>()
-
-        datesList.forEach { date ->
-            if (memberPayments[date] != true) {
-                val dueDate = parseDateLabel(date)
-                if (dueDate != null && today.isAfter(dueDate)) {
-                    val monthsLate = ChronoUnit.MONTHS.between(dueDate, today).toInt().coerceAtLeast(0)
-                    if (monthsLate > 0) {
-                        val dendaForWeek = (kasPerWeek * 5.0 * monthsLate / 100).toInt()
-                        totalDendaAmount += dendaForWeek
-                        unpaidMonthsSet.add(dueDate.monthValue)
-                    }
-                }
-            }
-        }
-
-        if (totalDendaAmount > 0) {
-            Result.success(DendaInfo(
-                memberId = member.id,
-                memberName = member.name,
-                unpaidMonths = unpaidMonthsSet.size,
-                dendaPercentage = unpaidMonthsSet.size * 5.0,
-                dendaAmount = totalDendaAmount
-            ))
-        } else {
-            Result.success(null)
-        }
+        Result.success(calculateDenda(member))
     }
 
     // --- DASHBOARD ---
@@ -322,13 +339,20 @@ class AppCashRepository(private val context: Context) {
             val weekIncome = weekPaid * configData.kasAmount
             totalKasIncome += weekIncome
 
+            // Grafik per 2 minggu: pemasukan = jumlah 2 minggu, pengeluaran = sesuai tanggal transaksi
             if (index % 2 == 1) {
+                val prevDate = datesList[index - 1]
+                val prevPaid = paymentRecords.values.count { it[prevDate] == true }
                 weeklyLabelsList.add("M${index + 1}")
-                weeklyIncomeList.add(weekIncome * 2)
-                val exp = when (index) {
-                    1 -> 45000; 3 -> 195000; 7 -> 215000; 15 -> 380000; 19 -> 340000; else -> 0
-                }
-                weeklyExpensesList.add(exp)
+                weeklyIncomeList.add(weekIncome + prevPaid * configData.kasAmount)
+
+                val start = parseDateLabel(prevDate)
+                val end = datesList.getOrNull(index + 1)?.let { parseDateLabel(it) } ?: LocalDate.MAX
+                weeklyExpensesList.add(expensesList.filter { e ->
+                    val d = runCatching { LocalDate.parse(e.date) }.getOrNull() ?: return@filter false
+                    // Pengeluaran sebelum M01 ikut dihitung di bar pertama
+                    (index == 1 || (start != null && !d.isBefore(start))) && d.isBefore(end)
+                }.sumOf { it.amount })
             }
         }
 
@@ -359,7 +383,8 @@ class AppCashRepository(private val context: Context) {
     suspend fun getMembers(): Result<List<Member>> = withContext(Dispatchers.IO) { Result.success(membersList.toList()) }
 
     suspend fun getPayments(): Result<PaymentsWrapper> = withContext(Dispatchers.IO) {
-        Result.success(PaymentsWrapper(dates = datesList.toList(), records = paymentRecords.toMap()))
+        // Deep copy: UI tidak boleh mengubah map internal repository secara langsung
+        Result.success(PaymentsWrapper(dates = datesList.toList(), records = paymentRecords.mapValues { it.value.toMap() }))
     }
 
     suspend fun savePayments(wrapper: PaymentsWrapper): Result<Unit> = withContext(Dispatchers.IO) {
@@ -368,6 +393,7 @@ class AppCashRepository(private val context: Context) {
             datesMap.forEach { (date, paid) -> existing[date] = paid }
             paymentRecords[memberId] = existing
         }
+        persist()
         Result.success(Unit)
     }
 
@@ -375,27 +401,34 @@ class AppCashRepository(private val context: Context) {
         val memberMap = paymentRecords[memberId.toString()] ?: mutableMapOf()
         memberMap[date] = paid
         paymentRecords[memberId.toString()] = memberMap
+        persist()
         Result.success(Unit)
     }
 
     suspend fun getExpenses(): Result<List<Expense>> = withContext(Dispatchers.IO) { Result.success(expensesList.toList()) }
 
     suspend fun addExpense(req: ExpenseRequest): Result<IdResponse> = withContext(Dispatchers.IO) {
+        if (req.description.isBlank()) return@withContext Result.failure(Exception("Keterangan wajib diisi"))
+        if (req.amount <= 0) return@withContext Result.failure(Exception("Nominal harus lebih dari 0"))
         val newId = (expensesList.maxOfOrNull { it.id } ?: 0) + 1
-        expensesList.add(0, Expense(newId, req.description, req.amount, req.date, req.category))
+        expensesList.add(0, Expense(newId, req.description.trim(), req.amount, req.date, req.category))
+        persist()
         Result.success(IdResponse(newId))
     }
 
     suspend fun deleteExpense(id: Int): Result<Unit> = withContext(Dispatchers.IO) {
         expensesList.removeAll { it.id == id }
+        persist()
         Result.success(Unit)
     }
 
     suspend fun updateExpense(id: Int, description: String, amount: Int, date: String): Result<Unit> = withContext(Dispatchers.IO) {
+        if (amount <= 0) return@withContext Result.failure(Exception("Nominal harus lebih dari 0"))
         val idx = expensesList.indexOfFirst { it.id == id }
         if (idx >= 0) {
             val old = expensesList[idx]
-            expensesList[idx] = old.copy(description = description, amount = amount, date = date)
+            expensesList[idx] = old.copy(description = description.trim(), amount = amount, date = date)
+            persist()
             Result.success(Unit)
         } else {
             Result.failure(Exception("Expense not found"))
@@ -405,7 +438,8 @@ class AppCashRepository(private val context: Context) {
     suspend fun updateMember(id: Int, name: String, nis: String, role: String, bio: String, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
         val idx = membersList.indexOfFirst { it.id == id }
         if (idx >= 0) {
-            membersList[idx] = membersList[idx].copy(name = name, nis = nis, role = role, bio = bio, phone = phone)
+            membersList[idx] = membersList[idx].copy(name = name.trim(), nis = nis.trim(), role = role, bio = bio.trim(), phone = phone.trim())
+            persist()
             Result.success(Unit)
         } else {
             Result.failure(Exception("Member not found"))
@@ -418,18 +452,22 @@ class AppCashRepository(private val context: Context) {
         configData = configData.copy(
             kasAmount       = req.kasAmount ?: configData.kasAmount,
             previousBalance = req.previousBalance ?: configData.previousBalance,
+            realBalance     = req.realBalance ?: configData.realBalance,
             className       = req.className ?: configData.className,
             year            = req.year ?: configData.year
         )
+        persist()
         Result.success(Unit)
     }
 
     // --- Payment Input Feature ---
     suspend fun addPaymentRecord(memberId: Int, amount: Int, date: String, note: String): Result<PaymentRecord> = withContext(Dispatchers.IO) {
         val member = membersList.find { it.id == memberId } ?: return@withContext Result.failure(Exception("Member not found"))
+        if (amount <= 0) return@withContext Result.failure(Exception("Nominal harus lebih dari 0"))
         val newId = (paymentHistoryList.maxOfOrNull { it.id } ?: 0) + 1
         val record = PaymentRecord(id = newId, memberId = memberId, memberName = member.name, amount = amount, date = date, note = note)
         paymentHistoryList.add(0, record)
+        persist()
         Result.success(record)
     }
 
