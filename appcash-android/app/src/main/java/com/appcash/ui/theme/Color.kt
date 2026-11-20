@@ -1,8 +1,16 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · Color.kt
+// Isi file : Palet warna tema Warm Sunset Orange.
+// Penanda  : CARI-TEMA
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
 // AppCash Orange Palette – v3.0
+// CARI-TEMA | Warna utama aplikasi; ganti nilai hex di sini untuk mengubah tema.
 val OrangePrimary   = Color(0xFFFF6B00)
 val OrangeLight     = Color(0xFFFF8C42)
 val OrangeDark      = Color(0xFFE55A00)

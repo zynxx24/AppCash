@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · Models.kt
+// Isi file : Bentuk data (model) yang dipakai repository dan layar.
+// Penanda  : CARI-SALDO, CARI-ANGGOTA, CARI-PENGELUARAN, CARI-DONASI, CARI-NOMINAL-KAS, CARI-DENDA
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.data.model
 
 import com.google.gson.annotations.SerializedName
@@ -19,6 +26,7 @@ data class IdResponse(
     val id: Int
 )
 
+// CARI-SALDO | Ringkasan angka untuk Dashboard dan kartu saldo.
 data class Dashboard(
     @SerializedName("total_balance") val totalBalance: Int,
     @SerializedName("previous_balance") val previousBalance: Int,
@@ -32,9 +40,12 @@ data class Dashboard(
     @SerializedName("latest_paid") val latestPaid: Int,
     val weeklyLabels: List<String> = emptyList(),
     val weeklyKasIncome: List<Int> = emptyList(),
-    val weeklyExpenses: List<Int> = emptyList()
+    val weeklyExpenses: List<Int> = emptyList(),
+    val totalDonationAmount: Int = 0,
+    val realBalance: Int = 0
 )
 
+// CARI-ANGGOTA | Data satu siswa.
 data class Member(
     val id: Int,
     val name: String,
@@ -46,12 +57,22 @@ data class Member(
     val avatarUrl: String = ""
 )
 
+// CARI-PENGELUARAN | Data satu pengeluaran (tanggal format yyyy-MM-dd).
 data class Expense(
     val id: Int,
     val description: String,
     val amount: Int,
     val date: String,
     val category: String = "Perlengkapan"
+)
+
+// CARI-DONASI | Data satu donasi.
+data class Donation(
+    val id: Int,
+    val name: String,
+    val amount: Int,
+    val date: String,
+    val note: String = "-"
 )
 
 data class Levy(
@@ -64,10 +85,11 @@ data class Levy(
     val transferred: Boolean = false
 )
 
+// CARI-NOMINAL-KAS | Nilai bawaan konfigurasi kas (nominal, saldo awal, saldo fisik).
 data class Config(
     @SerializedName("kas_amount") val kasAmount: Int = 5000,
-    @SerializedName("previous_balance") val previousBalance: Int = 500000,
-    @SerializedName("real_balance") val realBalance: Int = 3365000,
+    @SerializedName("previous_balance") val previousBalance: Int = 0,
+    @SerializedName("real_balance") val realBalance: Int = 1389000,
     @SerializedName("class_name") val className: String = "XII PPLG",
     val year: String = "2026/2027"
 )
@@ -126,6 +148,7 @@ data class UserProfile(
     val avatarUrl: String = ""
 )
 
+// CARI-DENDA | Hasil hitung denda per siswa.
 data class DendaInfo(
     val memberId: Int,
     val memberName: String,

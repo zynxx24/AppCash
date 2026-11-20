@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · MainActivity.kt
+// Isi file : Activity utama, pilihan login/halaman utama, dan bottom bar 5 tab.
+// Penanda  : CARI-MULAI, CARI-LOGIN, CARI-NAVIGASI
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui
 
 import android.os.Bundle
@@ -45,6 +52,7 @@ import com.appcash.ui.theme.OrangeContainer
 import com.appcash.ui.theme.OrangePrimary
 import kotlinx.coroutines.launch
 
+// CARI-MULAI | Aplikasi dibuka dari sini: ambil repository lalu tampilkan AppRoot.
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +73,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// CARI-LOGIN | Menentukan yang tampil: LoginScreen (belum login) atau MainContent (sudah login).
 @Composable
 fun AppRoot(repository: AppCashRepository) {
     // Sesi disimpan di repository (singleton), jadi aman saat rotasi layar
@@ -95,6 +104,8 @@ fun AppRoot(repository: AppCashRepository) {
     }
 }
 
+// CARI-NAVIGASI | Bottom bar + HorizontalPager. Nomor halaman: 0 Kas, 1 Pengeluaran, 2 Dashboard, 3 Anggota, 4 Profil.
+//   Menambah tab = tambah item di bottomNavItems* dan cabang `when (page)` di bawah.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MainContent(repository: AppCashRepository, isAdmin: Boolean, onLogout: () -> Unit) {
@@ -222,6 +233,7 @@ data class ScreenItem(
 )
 
 // Admin: Kas, Pengeluaran, Dashboard, Anggota, Profil
+// CARI-NAVIGASI | Label & ikon tab untuk admin (bendahara). Versi siswa ada di bottomNavItemsUser.
 val bottomNavItemsAdmin = listOf(
     ScreenItem("payments", "Kas",        Icons.Outlined.ShoppingCart, Icons.Filled.ShoppingCart),
     ScreenItem("expenses", "Pengeluaran",Icons.Outlined.List,         Icons.Filled.List),

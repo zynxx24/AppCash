@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · PaymentsScreen.kt
+// Isi file : Halaman Kas: admin mencentang pembayaran per minggu, siswa melihat status & membayar.
+// Penanda  : CARI-PEMBAYARAN, CARI-SALDO, CARI-DENDA, CARI-DISPENSASI, CARI-QRIS, CARI-WHATSAPP, CARI-ANGGOTA
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -68,6 +75,7 @@ fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
 // ADMIN PAYMENTS SCREEN
 // ============================================================
 
+// CARI-PEMBAYARAN | Tampilan admin: kartu saldo, tombol Tambah Pembayaran, daftar minggu kas.
 @Composable
 fun AdminPaymentsScreen(repository: AppCashRepository) {
     var payments by remember { mutableStateOf<PaymentsWrapper?>(null) }
@@ -234,6 +242,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
     }
 }
 
+// CARI-SALDO | Kartu oranye berisi total kas, pemasukan (kas + donasi), dan pengeluaran.
 @Composable
 fun AdminHeroCard(d: Dashboard?) {
     Box(
@@ -257,7 +266,7 @@ fun AdminHeroCard(d: Dashboard?) {
                     Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                         Text("Total Pemasukan", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                         Text(
-                            "Rp ${formatRupiah(d?.totalKasIncome ?: 0)}",
+                            "Rp ${formatRupiah((d?.totalKasIncome ?: 0) + (d?.totalDonationAmount ?: 0))}",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF22C55E)
@@ -284,6 +293,7 @@ fun AdminHeroCard(d: Dashboard?) {
 // ADMIN PAYMENT DIALOG – Select student → show unpaid → confirm
 // ============================================================
 
+// CARI-PEMBAYARAN CARI-DENDA | Admin memilih siswa lalu mencentang minggu yang dibayar; total = kas + denda minggu terpilih.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPaymentDialog(
@@ -305,10 +315,13 @@ fun AdminPaymentDialog(
     val selectedMember = members.find { it.id == selectedMemberId } ?: members.firstOrNull()
     val memberKey = selectedMember?.id?.toString() ?: "1"
     val memberRecords: Map<String, Boolean> = records[memberKey] ?: emptyMap()
-    val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true }
+    val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true && !repository.isExempt(selectedMemberId, date) }
     val selectedDates = remember { mutableStateMapOf<String, Boolean>() }
     val selectedCount = selectedDates.count { it.value }
     val kasAmount = selectedCount * 5000
+    // Denda hanya untuk minggu yang dicentang, bukan seluruh tunggakan
+    val dendaAmount = repository.dendaForWeeks(selectedDates.filterValues { it }.keys)
+    val allSelected = unpaidDates.isNotEmpty() && unpaidDates.all { selectedDates[it] == true }
 
     // Reset selection when member changes
     LaunchedEffect(selectedMemberId) {
@@ -397,9 +410,9 @@ fun AdminPaymentDialog(
                     // Select all button
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         TextButton(onClick = {
-                            unpaidDates.forEach { selectedDates[it] = true }
+                            if (allSelected) selectedDates.clear() else unpaidDates.forEach { selectedDates[it] = true }
                         }) {
-                            Text("Pilih Semua (${unpaidDates.size})", color = OrangePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                            Text(if (allSelected) "Batal Pilih Semua" else "Pilih Semua (${unpaidDates.size})", color = OrangePrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -437,10 +450,16 @@ fun AdminPaymentDialog(
                                 Text("Kas ($selectedCount minggu):", style = MaterialTheme.typography.bodySmall, color = TextMedium)
                                 Text("Rp ${formatRupiah(kasAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
                             }
+                            if (dendaAmount > 0) {
+                                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Denda keterlambatan:", style = MaterialTheme.typography.bodySmall, color = RedNegative)
+                                    Text("Rp ${formatRupiah(dendaAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = RedNegative)
+                                }
+                            }
                             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Total:", fontWeight = FontWeight.Bold)
-                                Text("Rp ${formatRupiah(kasAmount)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = OrangePrimary)
+                                Text("Rp ${formatRupiah(kasAmount + dendaAmount)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = OrangePrimary)
                             }
                         }
                     }
@@ -476,6 +495,7 @@ fun AdminPaymentDialog(
 // ADMIN WEEK DETAIL DIALOG – With editable checkboxes
 // ============================================================
 
+// CARI-PEMBAYARAN | Edit centang lunas semua siswa untuk satu minggu.
 @Composable
 fun AdminWeekDetailDialog(
     weekIndex: Int,
@@ -604,6 +624,7 @@ fun AdminWeekDetailDialog(
 // USER PAYMENTS SCREEN – Auto-detect logged-in user
 // ============================================================
 
+// CARI-PEMBAYARAN CARI-DISPENSASI | Tampilan siswa: status kas pribadi per minggu (Lunas / Dispensasi / Belum Bayar).
 @Composable
 fun UserPaymentsScreen(repository: AppCashRepository) {
     var payments by remember { mutableStateOf<PaymentsWrapper?>(null) }
@@ -639,9 +660,11 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
     val memberKey = currentMemberId?.toString() ?: "0"
     val memberRecords = payments?.records?.get(memberKey) ?: emptyMap()
     val allDates = payments?.dates ?: emptyList()
-    val paidCount = allDates.count { memberRecords[it] == true }
-    val unpaidCount = allDates.size - paidCount
-    val unpaidDates = allDates.filter { memberRecords[it] != true }
+    val exemptDates = allDates.filter { d -> currentMemberId?.let { repository.isExempt(it, d) } == true && memberRecords[d] != true }
+    val dueDates = allDates - exemptDates.toSet()
+    val paidCount = dueDates.count { memberRecords[it] == true }
+    val unpaidCount = dueDates.size - paidCount
+    val unpaidDates = dueDates.filter { memberRecords[it] != true }
 
     // Bayar Kas Dialog for user
     if (showBniPayment && payments != null && currentMemberId != null) {
@@ -704,7 +727,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Surface(shape = RoundedCornerShape(20.dp), color = if (unpaidCount == 0) GreenPositive else Color.White.copy(alpha = 0.25f)) {
                                             Text(
-                                                if (unpaidCount == 0) "✓ LUNAS" else "$paidCount/${allDates.size} Lunas",
+                                                if (unpaidCount == 0) "✓ LUNAS" else "$paidCount/${dueDates.size} Lunas",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color.White,
@@ -761,6 +784,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                     // Week-by-week status
                     itemsIndexed(allDates) { idx, date ->
                         val isPaid = memberRecords[date] == true
+                        val isExempt = date in exemptDates
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -777,12 +801,12 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                             }
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isPaid) GreenPositive else RedNegative.copy(alpha = 0.15f)
+                                color = when { isPaid -> GreenPositive; isExempt -> Color(0xFFE0E7FF); else -> RedNegative.copy(alpha = 0.15f) }
                             ) {
                                 Text(
-                                    if (isPaid) "✓ Lunas" else "Belum Bayar",
+                                    when { isPaid -> "✓ Lunas"; isExempt -> "Dispensasi"; else -> "Belum Bayar" },
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (isPaid) Color.White else RedNegative,
+                                    color = when { isPaid -> Color.White; isExempt -> Color(0xFF3730A3); else -> RedNegative },
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                 )
@@ -802,6 +826,8 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
 // USER BNI PAYMENT DIALOG – Pre-filled with logged-in user
 // ============================================================
 
+// CARI-PEMBAYARAN CARI-QRIS CARI-WHATSAPP | Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
+//   Nomor rekening BNI & nomor WA admin ditulis di dalam fungsi ini.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserBniPaymentDialog(
@@ -824,19 +850,13 @@ fun UserBniPaymentDialog(
 
     val memberKey = currentMemberId.toString()
     val memberRecords: Map<String, Boolean> = records[memberKey] ?: emptyMap()
-    val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true }
+    val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true && !repository.isExempt(currentMemberId, date) }
     val selectedDates = remember { mutableStateMapOf<String, Boolean>() }
     val selectedCount = selectedDates.count { it.value }
     val baseKasAmount = selectedCount * 5000
 
-    var memberDendaInfo by remember { mutableStateOf<DendaInfo?>(null) }
-    LaunchedEffect(currentMemberId) {
-        repository.getDendaForMember(currentMemberId).onSuccess { info ->
-            memberDendaInfo = info
-        }
-    }
-
-    val dendaAmount = if (selectedCount > 0) (memberDendaInfo?.dendaAmount ?: 0) else 0
+    // Denda dihitung dari minggu yang dicentang saja
+    val dendaAmount = repository.dendaForWeeks(selectedDates.filterValues { it }.keys)
     val totalAmount = baseKasAmount + dendaAmount
 
     AlertDialog(
@@ -1131,6 +1151,7 @@ private fun calculateInSampleSize(outWidth: Int, outHeight: Int, reqSize: Int): 
     return inSampleSize
 }
 
+// CARI-ANGGOTA | Foto siswa dari res/drawable/student_<id>; bila tidak ada, tampil nomor id.
 /**
  * Performance-optimized composable for rendering student profile photos.
  *

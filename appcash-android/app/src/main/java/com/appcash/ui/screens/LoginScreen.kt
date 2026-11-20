@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · LoginScreen.kt
+// Isi file : Halaman masuk: siswa pilih nama, admin pakai email & password.
+// Penanda  : CARI-LOGIN
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
@@ -18,18 +25,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.appcash.data.model.Member
 import com.appcash.data.repository.AppCashRepository
 import com.appcash.ui.theme.OrangePrimary
 import kotlinx.coroutines.launch
 
+// CARI-LOGIN | Tombol bawah mengganti mode Siswa <-> Email & Password; ada tombol lihat password.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) -> Unit) {
     var isEmailMode by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
     var memberId by remember { mutableStateOf("") }
     var members by remember { mutableStateOf<List<Member>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -154,7 +164,12 @@ fun LoginScreen(repository: AppCashRepository, onLoginSuccess: (role: String) ->
                         value = password,
                         onValueChange = { password = it; error = null },
                         label = { Text("Password") },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            TextButton(onClick = { showPassword = !showPassword }) {
+                                Text(if (showPassword) "Sembunyikan" else "Lihat", color = OrangePrimary, style = MaterialTheme.typography.labelSmall)
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,

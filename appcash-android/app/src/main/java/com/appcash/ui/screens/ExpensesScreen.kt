@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · ExpensesScreen.kt
+// Isi file : Halaman Pengeluaran: daftar, total, tambah, edit, hapus.
+// Penanda  : CARI-PENGELUARAN, CARI-VALIDASI
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -31,6 +38,7 @@ import com.appcash.ui.theme.OrangePrimary
 import com.appcash.ui.theme.RedNegative
 import kotlinx.coroutines.launch
 
+// CARI-PENGELUARAN | Daftar pengeluaran urut terbaru + total di atas; tombol tambah hanya untuk admin.
 @Composable
 fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
@@ -132,7 +140,16 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(expenses) { expense ->
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${expenses.size} transaksi", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Total Rp ${formatRupiah(expenses.sumOf { it.amount })}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = RedNegative)
+                            }
+                        }
+                        items(expenses.sortedByDescending { it.date }, key = { it.id }) { expense ->
                             ExpenseItemCard(
                                 expense = expense,
                                 isAdmin = isAdmin,
@@ -232,11 +249,13 @@ fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDe
     }
 }
 
+// CARI-PENGELUARAN CARI-VALIDASI | Form tambah: tanggal otomatis hari ini, tombol aktif hanya bila isian valid.
 @Composable
 fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> Unit) {
     var description by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
+    // Tanggal otomatis terisi hari ini supaya bendahara tidak perlu mengetik ulang
+    var date by remember { mutableStateOf(java.time.LocalDate.now().toString().replace("-", "")) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -284,6 +303,8 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
                     val formattedDate = date.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d }
                     if (description.isNotBlank() && amt > 0 && isValidDate(formattedDate)) onConfirm(description, amt, formattedDate)
                 },
+                enabled = description.isNotBlank() && (amount.toIntOrNull() ?: 0) > 0 && date.length == 8 &&
+                    isValidDate("${date.take(4)}-${date.substring(4, 6)}-${date.takeLast(2)}"),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
             ) { Text("Tambah", color = Color.White, fontWeight = FontWeight.Bold) }
@@ -294,6 +315,7 @@ fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> 
     )
 }
 
+// CARI-PENGELUARAN | Form edit pengeluaran.
 @Composable
 fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (String, Int, String) -> Unit) {
     var description by remember { mutableStateOf(expense.description) }
@@ -347,6 +369,8 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
                     val formattedDate = date.let { d -> if (d.length == 8) "${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}" else d }
                     if (description.isNotBlank() && amt > 0 && isValidDate(formattedDate)) onConfirm(description, amt, formattedDate)
                 },
+                enabled = description.isNotBlank() && (amount.toIntOrNull() ?: 0) > 0 && date.length == 8 &&
+                    isValidDate("${date.take(4)}-${date.substring(4, 6)}-${date.takeLast(2)}"),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
             ) { Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold) }
@@ -357,6 +381,7 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
     )
 }
 
+// CARI-VALIDASI | Menolak tanggal yang tidak ada di kalender, mis. 2026-02-30.
 /** true jika tanggal YYYY-MM-DD benar-benar ada di kalender (mis. 2026-02-30 ditolak). */
 fun isValidDate(value: String): Boolean =
     runCatching { java.time.LocalDate.parse(value) }.isSuccess

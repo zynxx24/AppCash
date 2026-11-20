@@ -1,4 +1,13 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · DashboardScreen.kt
+// Isi file : Dashboard: saldo, ringkasan, status kas siswa, grafik bulanan, daftar denda.
+// Penanda  : CARI-SALDO, CARI-DENDA, CARI-GRAFIK, CARI-VALIDASI, CARI-FORMAT-RUPIAH
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
+
+import androidx.compose.ui.graphics.nativeCanvas
 
 import com.appcash.ui.theme.orangeCard
 import androidx.compose.animation.AnimatedVisibility
@@ -47,6 +56,7 @@ import com.appcash.ui.theme.OrangePrimary
 import com.appcash.ui.theme.RedNegative
 import com.appcash.ui.theme.TextMedium
 
+// CARI-SALDO CARI-DENDA | Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda semua siswa.
 @Composable
 fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER") isAdmin: Boolean) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
@@ -122,7 +132,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                             }
                             Column {
                                 Text(
-                                    "Welcome Back,",
+                                    "Selamat datang,",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -159,6 +169,14 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
+                            // Cocokkan saldo buku dengan uang fisik di peti kas
+                            val selisih = d.realBalance - d.totalBalance
+                            Text(
+                                if (selisih == 0) "✓ Sama dengan saldo fisik di peti kas"
+                                else "Saldo fisik Rp ${formatRupiah(d.realBalance)} (selisih Rp ${formatRupiah(kotlin.math.abs(selisih))})",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -182,7 +200,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Text(
-                                                "Rp ${formatRupiah(d.totalKasIncome)}",
+                                                "Rp ${formatRupiah(d.totalKasIncome + d.totalDonationAmount)}",
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
                                                 style = MaterialTheme.typography.bodyMedium,
@@ -363,13 +381,13 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Text(
-                                    "Grafik Tren Kas Mingguan",
+                                    "Grafik Kas per Bulan",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = OrangePrimary
                                 )
                                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    LegendDot(color = GreenPositive, label = "Kas Masuk")
+                                    LegendDot(color = GreenPositive, label = "Kas + Donasi")
                                     LegendDot(color = RedNegative, label = "Pengeluaran")
                                 }
                                 WeeklyKasLineChart(
@@ -544,6 +562,7 @@ fun DashStatCard(title: String, value: String, icon: ImageVector, modifier: Modi
     }
 }
 
+// CARI-GRAFIK | Grafik garis pemasukan (hijau) vs pengeluaran (merah) dengan label bulan di bawah.
 @Composable
 fun WeeklyKasLineChart(
     labels: List<String>,
@@ -650,6 +669,18 @@ fun WeeklyKasLineChart(
                 }
             }
         }
+
+        // Label bulan di sumbu bawah
+        val labelPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.parseColor("#6B7280")
+            textSize = 10.dp.toPx()
+            textAlign = android.graphics.Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        labels.forEachIndexed { i, label ->
+            val x = (if (count > 1) stepX * i else size.width / 2f).coerceIn(12.dp.toPx(), size.width - 12.dp.toPx())
+            drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 4.dp.toPx(), labelPaint)
+        }
     }
 }
 
@@ -661,6 +692,7 @@ fun DetailRow(label: String, value: String) {
     }
 }
 
+// CARI-VALIDASI | Tampilan error + tombol Coba lagi yang dipakai beberapa layar.
 @Composable
 fun ErrorView(error: String, onRetry: () -> Unit) {
     Column(
@@ -676,6 +708,7 @@ fun ErrorView(error: String, onRetry: () -> Unit) {
     }
 }
 
+// CARI-FORMAT-RUPIAH | Mengubah 1389000 menjadi "1.389.000" (tanpa "Rp").
 fun formatRupiah(value: Int): String {
     return String.format(java.util.Locale.US, "%,d", value).replace(',', '.')
 }

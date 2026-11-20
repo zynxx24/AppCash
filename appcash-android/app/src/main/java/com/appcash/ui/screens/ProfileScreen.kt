@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · ProfileScreen.kt
+// Isi file : Halaman Profil: data diri, denda pribadi, edit profil, keluar.
+// Penanda  : CARI-PROFIL, CARI-LOGIN
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import androidx.compose.foundation.background
@@ -26,6 +33,7 @@ import com.appcash.data.repository.AppCashRepository
 import com.appcash.ui.theme.*
 import kotlinx.coroutines.launch
 
+// CARI-PROFIL CARI-LOGIN | Menampilkan profil, kartu denda (siswa), tombol Edit Profil dan Logout.
 @Composable
 fun ProfileScreen(
     repository: AppCashRepository,

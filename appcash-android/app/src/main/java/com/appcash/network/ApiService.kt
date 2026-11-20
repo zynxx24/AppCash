@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · ApiService.kt
+// Isi file : Definisi API server (Retrofit) untuk versi online.
+// Penanda  : CARI-TIDAK-DIPAKAI
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.network
 
 import com.appcash.data.model.*
@@ -8,6 +15,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 
+// CARI-TIDAK-DIPAKAI | Aplikasi saat ini offline; semua data berasal dari AppCashRepository.
 interface ApiService {
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>

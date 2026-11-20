@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · MembersScreen.kt
+// Isi file : Halaman Anggota: daftar 33 siswa, cari, bio, edit (admin), hubungi WA.
+// Penanda  : CARI-ANGGOTA, CARI-WHATSAPP
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -32,6 +39,7 @@ import com.appcash.ui.theme.OrangeLight
 import com.appcash.ui.theme.OrangePrimary
 import kotlinx.coroutines.launch
 
+// CARI-ANGGOTA | Daftar siswa + kolom cari nama/NIS/jabatan.
 @Composable
 fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
     var members by remember { mutableStateOf<List<Member>>(emptyList()) }
@@ -218,6 +226,7 @@ fun MemberCard(member: Member, index: Int, onClick: () -> Unit) {
     }
 }
 
+// CARI-ANGGOTA CARI-WHATSAPP | Detail siswa; tombol Hubungi WA mengubah nomor 08xx menjadi 628xx.
 @Composable
 fun MemberBioDialog(member: Member, isAdmin: Boolean, onDismiss: () -> Unit, onEdit: (Member) -> Unit) {
     val context = LocalContext.current
@@ -301,6 +310,7 @@ fun BioRow(label: String, value: String) {
     BioPill(label, value)
 }
 
+// CARI-ANGGOTA | Form edit siswa (khusus admin).
 @Composable
 fun EditMemberDialog(member: Member, onDismiss: () -> Unit, onConfirm: (String, String, String, String, String) -> Unit) {
     var name by remember { mutableStateOf(member.name) }

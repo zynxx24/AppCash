@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · PaymentInputScreen.kt
+// Isi file : Form input pembayaran manual (versi lama).
+// Penanda  : CARI-TIDAK-DIPAKAI
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -61,6 +68,7 @@ class DateVisualTransformation : VisualTransformation {
     }
 }
 
+// CARI-TIDAK-DIPAKAI | Tidak dipanggil dari navigasi; pembayaran resmi dicatat lewat PaymentsScreen.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentInputScreen(repository: AppCashRepository) {

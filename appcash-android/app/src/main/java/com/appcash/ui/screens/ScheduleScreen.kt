@@ -1,3 +1,10 @@
+// ==========================================================================
+// PETA FILE · AppCash (Kelompok 6) · ScheduleScreen.kt
+// Isi file : Jadwal mata pelajaran XII PPLG.
+// Penanda  : CARI-JADWAL, CARI-TIDAK-DIPAKAI
+// Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
+//            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
+// ==========================================================================
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -36,6 +43,7 @@ data class ScheduleItem(
     val isRplFocus: Boolean = false
 )
 
+// CARI-JADWAL CARI-TIDAK-DIPAKAI | Belum dipasang di bottom bar; tambahkan di MainContent bila ingin ditampilkan.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen() {
