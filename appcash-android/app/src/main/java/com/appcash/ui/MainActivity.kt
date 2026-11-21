@@ -5,6 +5,15 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU
+//  File pertama yang jalan saat aplikasi dibuka. Alur:
+//    1. AppCashApplication membuat satu AppCashRepository (data)
+//    2. MainActivity.onCreate mengambilnya lalu memanggil AppRoot
+//    3. AppRoot: belum login -> LoginScreen. Sudah login -> MainContent
+//    4. MainContent: bar bawah 5 tab + HorizontalPager (geser kiri kanan antar halaman)
+//  Urutan tab (nomor halaman): 0 Kas (PaymentsScreen), 1 Pengeluaran (ExpensesScreen), 2 Dashboard (DashboardScreen, halaman AWAL),
+//                              3 Anggota (MembersScreen), 4 Profil (ProfileScreen)
+//  isAdmin dikirim ke tiap layar: admin = akun email admin, siswa = akun pilih nama. Tampilan tiap layar berbeda sesuai isAdmin.
 package com.appcash.ui
 
 import android.os.Bundle
@@ -74,6 +83,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Penentu halaman paling atas. isLoggedIn dan currentRole disimpan dengan rememberSaveable supaya tidak hilang saat layar diputar.
 // CARI-LOGIN | Menentukan yang tampil: LoginScreen (belum login) atau MainContent (sudah login).
 @Composable
 fun AppRoot(repository: AppCashRepository) {
@@ -105,6 +115,9 @@ fun AppRoot(repository: AppCashRepository) {
     }
 }
 
+// Kerangka halaman utama. pagerState.initialPage = 2 membuat Dashboard yang pertama tampil.
+// bottomBar menggambar 5 tombol; tombol tengah (Dashboard) lebih besar dan menonjol naik (offset -8.dp).
+// Menekan tombol -> animateScrollToPage(index), sama seperti menggeser halaman.
 // CARI-NAVIGASI | Bottom bar + HorizontalPager. Nomor halaman: 0 Kas, 1 Pengeluaran, 2 Dashboard, 3 Anggota, 4 Profil.
 //   Menambah tab = tambah item di bottomNavItems* dan cabang `when (page)` di bawah.
 @OptIn(ExperimentalFoundationApi::class)
@@ -195,6 +208,8 @@ fun MainContent(repository: AppCashRepository, isAdmin: Boolean, onLogout: () ->
             }
         }
     ) { innerPadding ->
+        // Isi halaman. when (page) memilih layar sesuai nomor halaman. key(page) membuat tiap halaman dikelola sendiri-sendiri.
+        // beyondBoundsPageCount = 1: hanya halaman tetangga yang disiapkan lebih dulu supaya hemat memori.
         HorizontalPager(
             state = pagerState,
             beyondBoundsPageCount = 1, // Only pre-compose 1 neighbor page to reduce memory
@@ -226,6 +241,7 @@ fun MainContent(repository: AppCashRepository, isAdmin: Boolean, onLogout: () ->
     }
 }
 
+// Satu tab: route (nama), label (tulisan), icon (ikon biasa), iconFilled (ikon terpilih).
 data class ScreenItem(
     val route: String,
     val label: String,

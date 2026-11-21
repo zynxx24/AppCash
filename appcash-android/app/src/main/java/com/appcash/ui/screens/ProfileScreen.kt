@@ -5,6 +5,10 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU : TAB "PROFIL"
+//  Susunan: header (foto, nama, label peran) -> kartu info diri -> kartu denda (hanya siswa yang punya denda) -> tombol Edit Profil dan Keluar -> versi aplikasi.
+//  Admin: profil virtual (tidak bisa diedit nama/HP). Siswa: bisa ubah nama, no HP, bio (updateProfile).
+//  Tombol Keluar membuka dialog konfirmasi, lalu repository.logout() dan kembali ke LoginScreen.
 package com.appcash.ui.screens
 
 import androidx.compose.foundation.background

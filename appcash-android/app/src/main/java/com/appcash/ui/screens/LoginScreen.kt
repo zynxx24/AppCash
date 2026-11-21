@@ -5,6 +5,12 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU
+//  Layar login dengan DUA mode (tombol bawah untuk berganti):
+//    Mode Siswa (isEmailMode = false): pilih nama dari daftar 33 siswa (dropdown), tanpa password.
+//    Mode Admin (isEmailMode = true) : email admin@gmail.com + password admin123 (dicek lewat hash SHA-256 di repository).
+//  Tombol Masuk memanggil repository.login(...). Berhasil -> onLoginSuccess(role) membuat AppRoot pindah ke MainContent.
+//  Gagal -> pesan error merah di bawah isian.
 package com.appcash.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility

@@ -5,6 +5,11 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU : TAB "PENGELUARAN"
+//  Daftar pengeluaran kas (urut terbaru) dengan total di atas. Semua orang bisa MELIHAT.
+//  Hanya ADMIN yang melihat tombol Tambah dan tombol Edit/Hapus di tiap kartu.
+//  Tiga dialog: AddExpenseDialog (tambah), EditExpenseDialog (ubah), dan dialog konfirmasi hapus.
+//  Data lewat repository: getExpenses, addExpense, updateExpense, deleteExpense. Saldo di Dashboard ikut berubah otomatis.
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -38,6 +43,7 @@ import com.appcash.ui.theme.OrangePrimary
 import com.appcash.ui.theme.RedNegative
 import kotlinx.coroutines.launch
 
+// State: expenses (daftar), showAdd (dialog tambah), editingExpense / deletingExpense (pengeluaran yang sedang diubah / dihapus).
 // CARI-PENGELUARAN | Daftar pengeluaran urut terbaru + total di atas; tombol tambah hanya untuk admin.
 @Composable
 fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
@@ -192,6 +198,7 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
     }
 }
 
+// Kartu satu pengeluaran: keterangan, tanggal, kategori, nominal merah. Tombol Edit dan Hapus hanya bila isAdmin.
 // Kartu satu pengeluaran. Tombol Edit dan Hapus hanya muncul bila isAdmin.
 @Composable
 fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
@@ -250,6 +257,7 @@ fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDe
     }
 }
 
+// Form tambah: keterangan, nominal, tanggal (otomatis hari ini, bentuk yyyyMMdd). Tombol aktif hanya bila isian valid (isValidDate dan nominal > 0).
 // CARI-PENGELUARAN CARI-VALIDASI | Form tambah: tanggal otomatis hari ini, tombol aktif hanya bila isian valid.
 @Composable
 fun AddExpenseDialog(onDismiss: () -> Unit, onConfirm: (String, Int, String) -> Unit) {
@@ -382,6 +390,7 @@ fun EditExpenseDialog(expense: Expense, onDismiss: () -> Unit, onConfirm: (Strin
     )
 }
 
+// Memeriksa tanggal benar-benar ada di kalender (menolak 2026-02-30).
 // CARI-VALIDASI | Menolak tanggal yang tidak ada di kalender, mis. 2026-02-30.
 /** true jika tanggal YYYY-MM-DD benar-benar ada di kalender (mis. 2026-02-30 ditolak). */
 fun isValidDate(value: String): Boolean =

@@ -5,6 +5,17 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU : TAB "KAS" (paling kiri)
+//  Isinya BERBEDA untuk admin dan siswa. PaymentsScreen memilih salah satu:
+//    ADMIN  -> AdminPaymentsScreen  : kartu saldo, tombol "Tambah Pembayaran", daftar 37 minggu (M01..M37)
+//               - menekan satu minggu  -> AdminWeekDetailDialog : centang/lepas pembayaran SEMUA siswa untuk minggu itu
+//               - tombol Tambah        -> AdminPaymentDialog    : pilih siswa, centang minggu yang dibayar, total = kas + denda
+//    SISWA  -> UserPaymentsScreen   : kartu status pribadi, tombol "Bayar Kas (N minggu)", riwayat tiap minggu (Lunas/Dispensasi/Belum Bayar)
+//               - tombol Bayar        -> UserBniPaymentDialog   : transfer BNI atau scan QRIS, lalu kirim bukti ke WA admin, lalu Konfirmasi
+//  Alur bayar siswa: 1) pilih minggu  2) bayar via BNI/QRIS  3) tombol "1. Kirim Bukti ke WA Admin"  4) tombol "2. Konfirmasi" (baru aktif setelah langkah 3).
+//  Semua perubahan disimpan lewat repository.savePayments, lalu saldo dan denda otomatis ikut berubah.
+//  Komponen bersama: PaymentDateCard (kartu satu minggu), StudentAvatar (foto siswa).
+//  MiniBarChart di akhir file adalah grafik batang kecil yang TIDAK dipanggil dari mana pun.
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -62,6 +73,7 @@ import kotlinx.coroutines.launch
 // PAYMENTS SCREEN – Branched by role
 // ============================================================
 
+// Pintu masuk tab Kas: isAdmin true -> AdminPaymentsScreen, selain itu -> UserPaymentsScreen.
 // Menu Kas: admin melihat layar kelola pembayaran, siswa melihat status kas miliknya.
 @Composable
 fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
@@ -76,6 +88,8 @@ fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
 // ADMIN PAYMENTS SCREEN
 // ============================================================
 
+// Tampilan admin. State: payments (tabel centang), members, dashboard, showAdminPayment (dialog tambah), selectedWeekDate (dialog detail minggu).
+// Susunan: judul "Kelola Pembayaran Kas" -> kartu saldo (AdminHeroCard) -> tombol Tambah Pembayaran -> daftar minggu.
 // CARI-PEMBAYARAN | Tampilan admin: kartu saldo, tombol Tambah Pembayaran, daftar minggu kas.
 @Composable
 fun AdminPaymentsScreen(repository: AppCashRepository) {
@@ -122,6 +136,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
         loading = false
     }
 
+    // Dialog Tambah Pembayaran (tampil bila showAdminPayment true). onConfirm -> repository.savePayments lalu muat ulang.
     // Admin Payment Dialog
     if (showAdminPayment && payments != null) {
         AdminPaymentDialog(
@@ -145,6 +160,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
         )
     }
 
+    // Dialog detail satu minggu (tampil bila selectedWeekDate tidak kosong). Admin bisa mencentang ulang semua siswa di minggu itu.
     // Week Detail Dialog (admin can edit)
     if (selectedWeekDate != null && payments != null) {
         AdminWeekDetailDialog(
@@ -177,6 +193,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
                 val p = payments!!
                 val d = dashboard
                 Column(modifier = Modifier.fillMaxSize()) {
+                    // Judul halaman admin.
                     // Page Header
                     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                         Text("Admin", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -205,6 +222,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Daftar 37 minggu. Tiap kartu menampilkan "Minggu ke-N", tanggal, dan "x/33 Anggota" yang sudah lunas (paidCount dihitung dari tabel centang).
                     // Payment Dates List
                     if (p.dates.isEmpty()) {
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -244,6 +262,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
     }
 }
 
+// Kartu oranye ringkasan saldo di tab Kas admin: total kas, pemasukan, pengeluaran (angka dari Dashboard).
 // CARI-SALDO | Kartu oranye berisi total kas, pemasukan (kas + donasi), dan pengeluaran.
 @Composable
 fun AdminHeroCard(d: Dashboard?) {
@@ -295,6 +314,11 @@ fun AdminHeroCard(d: Dashboard?) {
 // ADMIN PAYMENT DIALOG – Select student → show unpaid → confirm
 // ============================================================
 
+// DIALOG TAMBAH PEMBAYARAN (admin):
+//   1. pilih siswa (dropdown berfoto)
+//   2. daftar minggu yang BELUM lunas dan bukan dispensasi (unpaidDates), centang minggu yang dibayar. Ada tombol "pilih semua".
+//   3. rincian: kas = jumlah minggu dicentang x Rp5.000, denda = dendaForWeeks(minggu dicentang), total = kas + denda
+//   4. Konfirmasi: minggu dicentang ditandai lunas di tabel lalu disimpan.
 // CARI-PEMBAYARAN CARI-DENDA | Admin memilih siswa lalu mencentang minggu yang dibayar; total = kas + denda minggu terpilih.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -317,9 +341,11 @@ fun AdminPaymentDialog(
     val selectedMember = members.find { it.id == selectedMemberId } ?: members.firstOrNull()
     val memberKey = selectedMember?.id?.toString() ?: "1"
     val memberRecords: Map<String, Boolean> = records[memberKey] ?: emptyMap()
+    // Minggu yang bisa dipilih = belum lunas DAN bukan minggu dispensasi siswa itu.
     val unpaidDates = wrapper.dates.filter { date -> memberRecords[date] != true && !repository.isExempt(selectedMemberId, date) }
     val selectedDates = remember { mutableStateMapOf<String, Boolean>() }
     val selectedCount = selectedDates.count { it.value }
+    // Kas = jumlah minggu dicentang x Rp5.000. Denda di bawahnya hanya untuk minggu yang dicentang, bukan seluruh tunggakan.
     val kasAmount = selectedCount * 5000
     // Denda hanya untuk minggu yang dicentang, bukan seluruh tunggakan
     val dendaAmount = repository.dendaForWeeks(selectedDates.filterValues { it }.keys)
@@ -497,6 +523,7 @@ fun AdminPaymentDialog(
 // ADMIN WEEK DETAIL DIALOG – With editable checkboxes
 // ============================================================
 
+// Dialog daftar 33 siswa untuk satu minggu, dengan kotak centang yang bisa diubah. Tombol Simpan mengirim tabel baru ke repository.
 // CARI-PEMBAYARAN | Edit centang lunas semua siswa untuk satu minggu.
 @Composable
 fun AdminWeekDetailDialog(
@@ -626,6 +653,8 @@ fun AdminWeekDetailDialog(
 // USER PAYMENTS SCREEN – Auto-detect logged-in user
 // ============================================================
 
+// Tampilan siswa. currentMemberId = siswa yang login, jadi hanya datanya sendiri yang dipakai (records[memberKey]).
+// Hitungan: dueDates = semua minggu dikurangi minggu dispensasi, paidCount = yang sudah dicentang, unpaidCount = sisanya.
 // CARI-PEMBAYARAN CARI-DISPENSASI | Tampilan siswa: status kas pribadi per minggu (Lunas / Dispensasi / Belum Bayar).
 @Composable
 fun UserPaymentsScreen(repository: AppCashRepository) {
@@ -662,12 +691,14 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
     val memberKey = currentMemberId?.toString() ?: "0"
     val memberRecords = payments?.records?.get(memberKey) ?: emptyMap()
     val allDates = payments?.dates ?: emptyList()
+    // exemptDates = minggu dispensasi (BI/PKL) yang belum dibayar. Minggu ini TIDAK dihitung sebagai belum bayar dan tidak didenda.
     val exemptDates = allDates.filter { d -> currentMemberId?.let { repository.isExempt(it, d) } == true && memberRecords[d] != true }
     val dueDates = allDates - exemptDates.toSet()
     val paidCount = dueDates.count { memberRecords[it] == true }
     val unpaidCount = dueDates.size - paidCount
     val unpaidDates = dueDates.filter { memberRecords[it] != true }
 
+    // Dialog pembayaran siswa. Setelah Konfirmasi, tabel centang disimpan dan muncul pesan "Pembayaran Kas Berhasil Dikonfirmasi".
     // Bayar Kas Dialog for user
     if (showBniPayment && payments != null && currentMemberId != null) {
         UserBniPaymentDialog(
@@ -708,6 +739,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                         }
                     }
 
+                    // Kartu nama siswa dan ringkasan "x/y Lunas" (atau tanda LUNAS bila semua beres).
                     // User Info Card
                     item {
                         Box(
@@ -753,6 +785,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                         }
                     }
 
+                    // Tombol "Bayar Kas (N minggu)" membuka dialog BNI/QRIS. Tidak tampil bila tidak ada minggu yang belum dibayar.
                     // Bayar Kas Button
                     if (unpaidCount > 0) {
                         item {
@@ -783,6 +816,7 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
                         )
                     }
 
+                    // Riwayat per minggu: "Minggu ke-N" dengan status Lunas (hijau), Dispensasi, atau Belum Bayar.
                     // Week-by-week status
                     itemsIndexed(allDates) { idx, date ->
                         val isPaid = memberRecords[date] == true
@@ -828,6 +862,10 @@ fun UserPaymentsScreen(repository: AppCashRepository) {
 // USER BNI PAYMENT DIALOG – Pre-filled with logged-in user
 // ============================================================
 
+// DIALOG BAYAR SISWA. Dua tab: "Transfer BNI" (nomor rekening 1892077413 bisa disalin ke clipboard) dan "Scan QRIS" (gambar res/drawable/qris_payment).
+// Langkah: pilih minggu -> bayar di luar aplikasi -> "1. Kirim Bukti ke WA Admin" (membuka WhatsApp admin dengan pesan terisi,
+// isWaConfirmed jadi true) -> "2. Konfirmasi" (baru aktif bila isWaConfirmed dan ada minggu dipilih) -> minggu ditandai lunas.
+// PERHATIAN: konfirmasi dilakukan siswa sendiri tanpa verifikasi admin. Ini batasan yang diketahui (lihat SRS 5.2).
 // CARI-PEMBAYARAN CARI-QRIS CARI-WHATSAPP | Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
 //   Nomor rekening BNI & nomor WA admin ditulis di dalam fungsi ini.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1017,6 +1055,7 @@ fun UserBniPaymentDialog(
                     onClick = {
                         val memberName = currentMember.name
                         val dendaText = if (dendaAmount > 0) " (termasuk denda Rp ${formatRupiah(dendaAmount)})" else ""
+                        // Isi pesan WhatsApp otomatis: nama siswa, lewat BNI atau QRIS, nominal, dan denda bila ada. Nomor WA admin: 6285600487433.
                         val message = "Halo Admin Kas XII PPLG, saya $memberName telah membayar iuran kas via ${if (showQris) "QRIS" else "BNI 1892077413"} sebesar Rp ${formatRupiah(totalAmount)} ($selectedCount minggu$dendaText). Mohon konfirmasi."
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=6285600487433&text=${Uri.encode(message)}"))
                         try { context.startActivity(intent) } catch (e: Exception) {
@@ -1049,6 +1088,7 @@ fun UserBniPaymentDialog(
                     records[memberKey] = updated
                     onConfirm(PaymentsWrapper(dates = wrapper.dates, records = records))
                 },
+                // Tombol Konfirmasi terkunci sampai tombol "Kirim Bukti ke WA Admin" ditekan dulu.
                 enabled = isWaConfirmed && selectedCount > 0,
                 colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
                 shape = RoundedCornerShape(10.dp)
@@ -1068,6 +1108,7 @@ fun UserBniPaymentDialog(
 // SHARED COMPONENTS
 // ============================================================
 
+// Kartu satu minggu (dipakai daftar admin): oranye, "Minggu ke-N", tanggal, jumlah lunas dari total anggota, dan tombol Edit (admin).
 // Kartu satu minggu kas (M01 sampai M37): jumlah siswa lunas dan tombol Edit.
 @Composable
 fun PaymentDateCard(
@@ -1155,6 +1196,8 @@ private fun calculateInSampleSize(outWidth: Int, outHeight: Int, reqSize: Int): 
     return inSampleSize
 }
 
+// Foto bulat siswa dari file res/drawable/student_<id>. Gambar didecode kecil dan disimpan di cache supaya hemat memori.
+// Bila file tidak ada atau rusak, tampil lingkaran dengan nomor id (tidak crash).
 // CARI-ANGGOTA | Foto siswa dari res/drawable/student_<id>; bila tidak ada, tampil nomor id.
 /**
  * Performance-optimized composable for rendering student profile photos.
@@ -1232,6 +1275,7 @@ fun StudentAvatar(memberId: Int, size: Int = 44) {
     }
 }
 
+// Grafik batang kecil pemasukan dan pengeluaran. TIDAK DIPANGGIL dari layar mana pun (sisa rancangan). Grafik yang tampil adalah WeeklyKasLineChart di Dashboard.
 // Grafik batang kecil pemasukan dan pengeluaran per bulan.
 @Composable
 fun MiniBarChart(

@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 /** Gradasi kartu oranye sesuai desain: terang di atas, gelap di bawah. */
 val OrangeCardBrush = Brush.verticalGradient(listOf(Color(0xFFFFB347), OrangeDark))
 
+// Pembuat kartu oranye bergradien (dipakai kartu saldo dan dua kartu kecil di Dashboard): .orangeCard(24.dp) = sudut bulat 24dp.
 /**
  * Kartu oranye standar AppCash: bayangan lembut + border tipis + sudut bulat.
  * Urutan modifier penting: shadow -> border -> clip -> background,

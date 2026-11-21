@@ -5,6 +5,10 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU : TAB "ANGGOTA"
+//  Daftar 33 siswa dengan kolom cari (nama, NIS, jabatan). Menekan satu siswa membuka dialog bio (MemberBioDialog)
+//  berisi NIS, jabatan, umur, dan tombol "Hubungi WA" (nomor 08xx diubah jadi 628xx untuk wa.me).
+//  Hanya ADMIN yang melihat tombol Edit di dialog bio (EditMemberDialog -> repository.updateMember).
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
@@ -39,6 +43,7 @@ import com.appcash.ui.theme.OrangeLight
 import com.appcash.ui.theme.OrangePrimary
 import kotlinx.coroutines.launch
 
+// State: members (daftar), searchQuery (kata cari), selectedMemberForBio (siswa yang bionya terbuka), editingMember (siswa yang sedang diedit admin).
 // CARI-ANGGOTA | Daftar siswa + kolom cari nama/NIS/jabatan.
 @Composable
 fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {

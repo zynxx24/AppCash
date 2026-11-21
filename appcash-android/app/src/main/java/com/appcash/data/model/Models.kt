@@ -5,6 +5,14 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU
+//  File ini hanya "cetakan data" (tidak ada tampilan, tidak ada hitungan). Seperti kolom di buku kas:
+//    Member = 1 siswa            Expense = 1 pengeluaran        Donation = 1 donasi
+//    Config = pengaturan kas (iuran Rp5.000, saldo fisik Rp1.389.000)
+//    Dashboard = paket angka siap tampil untuk layar Dashboard (saldo, pemasukan, data grafik)
+//    DendaInfo = hasil hitung denda satu siswa
+//  Tanda @SerializedName("nama_di_json") hanya mengatur nama field saat disimpan sebagai JSON (Gson).
+//  Catatan: Login/Levy/ConfigRequest dkk adalah sisa rancangan versi online (server), belum dipakai.
 package com.appcash.data.model
 
 import com.google.gson.annotations.SerializedName
@@ -26,6 +34,10 @@ data class IdResponse(
     val id: Int
 )
 
+// Paket angka untuk layar Dashboard. Yang dipakai kartu saldo: totalBalance (saldo buku), realBalance (uang fisik),
+// totalKasIncome + totalDonationAmount (pemasukan), totalExpenseAmount (pengeluaran).
+// Yang dipakai GRAFIK: weeklyLabels (nama bulan), weeklyKasIncome (pemasukan per bulan), weeklyExpenses (pengeluaran per bulan).
+// Walau namanya "weekly", isinya sekarang per BULAN.
 // CARI-SALDO | Ringkasan angka untuk Dashboard dan kartu saldo.
 data class Dashboard(
     @SerializedName("total_balance") val totalBalance: Int,
@@ -45,6 +57,7 @@ data class Dashboard(
     val realBalance: Int = 0
 )
 
+// Satu siswa. id 1 sampai 33. Foto diambil dari file res/drawable/student_<id>. role: Anggota, Ketua Kelas, Bendahara 1, dst.
 // CARI-ANGGOTA | Data satu siswa.
 data class Member(
     val id: Int,
@@ -85,6 +98,7 @@ data class Levy(
     val transferred: Boolean = false
 )
 
+// Pengaturan kas. kasAmount = iuran per minggu (5000). realBalance = uang fisik di peti kas (1389000), dipakai untuk mencocokkan dengan saldo buku di Dashboard.
 // CARI-NOMINAL-KAS | Nilai bawaan konfigurasi kas (nominal, saldo awal, saldo fisik).
 data class Config(
     @SerializedName("kas_amount") val kasAmount: Int = 5000,
@@ -148,6 +162,7 @@ data class UserProfile(
     val avatarUrl: String = ""
 )
 
+// Hasil denda satu siswa: unpaidMonths = berapa bulan berbeda yang punya minggu telat, dendaAmount = total rupiah denda.
 // CARI-DENDA | Hasil hitung denda per siswa.
 data class DendaInfo(
     val memberId: Int,

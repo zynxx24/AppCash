@@ -5,6 +5,8 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  CATATAN: layar input pembayaran manual (pilih siswa, nominal, tanggal, catatan) ini BELUM DIPASANG di menu.
+//  Pembayaran resmi dicatat lewat tab Kas (PaymentsScreen). Riwayatnya tidak ikut menghitung saldo.
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard

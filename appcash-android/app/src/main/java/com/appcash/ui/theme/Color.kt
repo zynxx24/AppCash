@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 val OrangePrimary   = Color(0xFFFF6B00)
 val OrangeLight     = Color(0xFFFF8C42)
 val OrangeDark      = Color(0xFFE55A00)
+// Warna AppCash: OrangePrimary/OrangeContainer (oranye utama, kartu, tab aktif), GreenPositive (lunas, pemasukan), RedNegative (denda, pengeluaran), TextMedium (teks keterangan).
 val OrangeContainer = Color(0xFFFFF3E0)
 val OrangeOnPrimary = Color(0xFFFFFFFF)
 

@@ -5,6 +5,9 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU
+//  Application = objek yang hidup selama aplikasi berjalan. Di sini AppCashRepository dibuat SEKALI (lazy),
+//  lalu dipakai MainActivity dan semua layar. Inilah sebabnya data dan sesi login tidak hilang saat layar diputar.
 package com.appcash
 
 import android.app.Application

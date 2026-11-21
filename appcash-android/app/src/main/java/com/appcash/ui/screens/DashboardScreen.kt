@@ -5,6 +5,19 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  BACA INI DULU : ISI DASHBOARD DARI ATAS KE BAWAH (halaman pertama setelah login)
+//    1. Header            "Selamat datang," + nama (siswa: ada foto bulat)
+//    2. Kartu oranye      HERO SALDO: "Total Kas XII PPLG", angka saldo besar, pencocokan saldo fisik, kotak Pemasukan dan Pengeluaran
+//    3. Dua kartu kecil   Anggota XII PPLG (33 Siswa) dan Periode Mingguan (37 Minggu)
+//    4. Status Kas Anda   (HANYA siswa) minggu sudah dibayar, belum, dan denda pribadi
+//    5. GRAFIK            "Grafik Kas per Bulan" = WeeklyKasLineChart, dua garis: hijau Kas+Donasi, merah Pengeluaran
+//    6. Denda Kas Tertunggak (HANYA admin) rekap denda semua siswa, bisa dibuka tutup
+//  JAWABAN CEPAT:
+//   - Grafik di mana?  -> fungsi WeeklyKasLineChart di bawah file ini. Jenis: GRAFIK GARIS dua warna, digambar manual (Canvas), tanpa library.
+//   - Isi grafik?      -> pemasukan (kas + donasi) dan pengeluaran PER BULAN. Sumbu bawah = nama bulan (Jan, Feb, ... Nov).
+//   - Data grafik dari mana? -> AppCashRepository.getDashboard() (bagian "Grafik per bulan").
+//   - Saldo dari mana? -> getDashboard juga. Layar ini hanya menampilkan.
+//   - Ada grafik batang? -> MiniBarChart ada di PaymentsScreen.kt tetapi TIDAK dipanggil. Yang tampil hanya grafik garis ini.
 package com.appcash.ui.screens
 
 import androidx.compose.ui.graphics.nativeCanvas
@@ -56,9 +69,12 @@ import com.appcash.ui.theme.OrangePrimary
 import com.appcash.ui.theme.RedNegative
 import com.appcash.ui.theme.TextMedium
 
+// Layar Dashboard. isAdmin menentukan bagian mana yang tampil (Status Kas Anda untuk siswa, rekap denda untuk admin).
 // CARI-SALDO CARI-DENDA | Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda (khusus admin).
 @Composable
 fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
+    // Variabel penampung data (kosong dulu, diisi setelah data dimuat): dashboard (angka saldo dan grafik), dendaList (rekap denda semua siswa),
+    // userProfile, userPaidWeeks/userTotalWeeks/userDenda (status kas siswa yang login), dendaExpanded (rekap denda terbuka atau tertutup).
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
     var dendaList by remember { mutableStateOf<List<DendaInfo>>(emptyList()) }
     var dendaExpanded by remember { mutableStateOf(false) }
@@ -70,7 +86,10 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
     var userDenda by remember { mutableStateOf<DendaInfo?>(null) }
     var currentMemberId by remember { mutableStateOf<Int?>(null) }
 
+    // Setiap data berubah, nomor versi naik, LaunchedEffect di bawah berjalan ulang dan semua angka dimuat ulang. Itu sebabnya
+    // setelah admin mencentang pembayaran, saldo di Dashboard langsung berubah tanpa tombol refresh.
     val dataVersion by repository.version.collectAsState()
+    // Memuat data: dashboard, rekap denda, profil, lalu (khusus siswa) status minggu dan denda pribadinya. loading = false setelah selesai.
     LaunchedEffect(dataVersion) {
         error = null
         repository.getDashboard().fold(
@@ -106,6 +125,7 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
+            // Tiga keadaan layar: loading (lingkaran berputar), error (tombol Coba lagi), atau data siap (tampilan penuh di bawah).
             loading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = OrangePrimary
@@ -118,6 +138,7 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                 ) {
+                    // BAGIAN 1: sapaan. Admin tampil "Administrator", siswa tampil nama dan fotonya (StudentAvatar).
                     // Top Header
                     Row(
                         modifier = Modifier
@@ -146,6 +167,10 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
                         }
                     }
 
+                    // BAGIAN 2: KARTU SALDO. Latar gradien oranye (orangeCard).
+                    //   d.totalBalance = saldo buku (dihitung getDashboard).  selisih = saldo fisik di peti dikurangi saldo buku.
+                    //   Bila selisih 0 tampil "Sama dengan saldo fisik di peti kas", bila tidak tampil angka selisihnya.
+                    //   Pemasukan = kas + donasi (Rp4.885.000), Pengeluaran = Rp3.496.000.
                     // Hero Balance Card (orange gradient)
                     Box(
                         modifier = Modifier
@@ -240,6 +265,7 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    // BAGIAN 3: dua kartu kecil: jumlah siswa (d.totalMembers) dan jumlah minggu kas (d.totalPaymentDates).
                     // Stat Cards Row – 2 orange gradient cards matching design
                     Row(
                         modifier = Modifier
@@ -299,6 +325,8 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // BAGIAN 4 (hanya siswa): kartu hijau bila semua lunas, kuning bila ada minggu belum bayar. unpaidWeeks = wajib dikurangi lunas.
+                    // Denda pribadi tampil di kanan bila ada. Siswa hanya melihat dirinya sendiri di sini.
                     // USER: Status Kas Anda Card
                     if (!isAdmin && currentMemberId != null) {
                         val unpaidWeeks = userTotalWeeks - userPaidWeeks
@@ -366,6 +394,8 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
+                    // BAGIAN 5: GRAFIK. Kartu putih berisi judul "Grafik Kas per Bulan", legenda dua warna, lalu WeeklyKasLineChart setinggi 180.dp.
+                    // Kartu hanya digambar bila ada data (d.weeklyKasIncome.isNotEmpty()).
                     // Chart Card
                     if (d.weeklyKasIncome.isNotEmpty()) {
                         Card(
@@ -400,6 +430,8 @@ fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
                         }
                     }
 
+                    // BAGIAN 6 (hanya admin): kartu "Denda Kas Tertunggak". Kalau ditekan, daftar detail per siswa membuka/menutup (AnimatedVisibility).
+                    // Siswa tidak melihat bagian ini supaya yang menunggak tidak dipermalukan.
                     // Denda Summary Card — Expandable
                     // CARI-DENDA | Rekap denda bernama hanya untuk admin, siswa melihat dendanya sendiri di kartu Status Kas Anda.
                     // TANYA-GURU: Kenapa rekap denda tidak muncul di akun siswa? Supaya yang belum bayar tidak dipermalukan (sasaran menyama braya).
@@ -566,6 +598,17 @@ fun DashStatCard(title: String, value: String, icon: ImageVector, modifier: Modi
     }
 }
 
+// =====================  GRAFIK DASHBOARD  =====================
+// INI KODE YANG MENGGAMBAR GRAFIK. Jenis: GRAFIK GARIS DUA WARNA (hijau = pemasukan, merah = pengeluaran) dengan isi gradasi.
+// Digambar manual di Canvas, tanpa library. Input: labels (nama bulan), incomes, expenses (satu angka per bulan).
+// LANGKAH GAMBAR:
+//   1. maxVal = nilai terbesar di antara semua pemasukan dan pengeluaran (minimal 1 agar tidak dibagi nol). Semua tinggi dibandingkan dengan angka ini.
+//   2. stepX = jarak mendatar antar bulan = lebar dibagi (jumlah bulan - 1). getY(nilai) = posisi vertikal (nilai besar = makin ke atas).
+//   3. 4 garis bantu mendatar tipis (i dari 0 sampai 3).
+//   4. GARIS HIJAU: Path menyambung titik pemasukan tiap bulan, isi gradasi di bawahnya, lalu titik bulat putih-hijau.
+//   5. GARIS MERAH: sama untuk pengeluaran (titik hanya digambar bila nilainya > 0).
+//   6. Label bulan ditulis di bawah tiap titik (drawText), dijaga agar tidak keluar tepi kanan kiri (coerceIn).
+// Tidak ada sumbu angka di sisi kiri: grafik menunjukkan BENTUK naik turun, angka pastinya ada di kartu saldo.
 // CARI-GRAFIK | Grafik garis pemasukan (hijau) vs pengeluaran (merah) dengan label bulan di bawah.
 @Composable
 fun WeeklyKasLineChart(
@@ -587,12 +630,14 @@ fun WeeklyKasLineChart(
         if (chartHeight <= 0f) return@Canvas
         val stepX = if (count > 1) size.width / (count - 1).toFloat() else size.width / 2f
 
+        // Mengubah nilai rupiah jadi posisi Y di layar: makin besar nilainya makin kecil Y (makin ke atas), karena Y layar dihitung dari atas.
         // Helper to get Y coordinate
         fun getY(value: Int): Float {
             return chartTop + chartHeight - (value / maxVal) * chartHeight
         }
 
         // Draw grid lines
+        // Empat garis bantu mendatar tipis (abu-abu transparan).
         for (i in 0..3) {
             val y = chartTop + chartHeight * i / 3f
             drawLine(
@@ -604,6 +649,7 @@ fun WeeklyKasLineChart(
         }
 
         // Draw income line + fill
+        // Garis pemasukan hanya digambar bila ada minimal 2 bulan. incomePath = garis, fillPath = isi gradasi di bawah garis.
         if (incomes.size >= 2) {
             val incomePath = Path()
             val fillPath = Path()
@@ -640,6 +686,7 @@ fun WeeklyKasLineChart(
         }
 
         // Draw expense line + fill
+        // Garis pengeluaran, caranya sama dengan garis pemasukan tetapi berwarna merah.
         if (expenses.size >= 2) {
             val expensePath = Path()
             val fillPath = Path()
@@ -674,6 +721,7 @@ fun WeeklyKasLineChart(
             }
         }
 
+        // Nama bulan di dasar grafik (Jan, Feb, Mar, ...). Juni tidak muncul karena tidak ada transaksi (libur).
         // Label bulan di sumbu bawah
         val labelPaint = android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#6B7280")
@@ -713,6 +761,7 @@ fun ErrorView(error: String, onRetry: () -> Unit) {
     }
 }
 
+// Mengubah 1389000 jadi "1.389.000". Layar menambahkan "Rp " sendiri di depannya.
 // CARI-FORMAT-RUPIAH | Mengubah 1389000 menjadi "1.389.000" (tanpa "Rp").
 fun formatRupiah(value: Int): String {
     return String.format(java.util.Locale.US, "%,d", value).replace(',', '.')

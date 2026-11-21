@@ -550,6 +550,20 @@ android {
 
 ---
 
+## 📖 Panduan Membaca Kode (untuk presentasi dan tanya jawab)
+
+| File | Isinya |
+|---|---|
+| `appcash-android/PETA-LAYAR.md` | Tabel "yang terlihat di layar → file dan nomor baris" (grafik, saldo, pembayaran, denda, dll) |
+| `appcash-android/KAMUS-KODE.md` | Arti istilah Kotlin dan Compose yang muncul di kode, dengan bahasa sederhana |
+| `appcash-android/TANYA-JAWAB.md` | 31 tebakan pertanyaan beserta jawaban dan letak kodenya |
+| `appcash-android/PETA-KODE.md` | Daftar penanda `CARI-...` dan `TANYA-GURU` |
+
+Setiap file `.kt` diawali blok **BACA INI DULU**, dan tiap bagian penting punya komentar penjelasan.
+Di Android Studio tekan **Ctrl+Shift+F** lalu ketik `BACA INI DULU` atau `TANYA-GURU`.
+
+---
+
 ## 💻 Panduan Instalasi & Build
 
 ### Persyaratan Sistem

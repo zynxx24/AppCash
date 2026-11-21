@@ -5,6 +5,8 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  CATATAN: seluruh file ini (Retrofit, daftar API, token) adalah RANCANGAN versi online yang BELUM DIPAKAI.
+//  Aplikasi sekarang offline penuh: semua data lewat AppCashRepository dan disimpan di HP.
 package com.appcash.network
 
 import com.appcash.data.model.*

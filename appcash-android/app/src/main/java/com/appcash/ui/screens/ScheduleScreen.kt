@@ -5,6 +5,8 @@
 // Cara cari: VS Code Ctrl+Shift+F (Android Studio Ctrl+Shift+F) lalu ketik
 //            "CARI-" untuk semua penanda, atau salah satu nama di baris Penanda.
 // ==========================================================================
+//  CATATAN: layar jadwal pelajaran ini BELUM DIPASANG di bar bawah (tidak dipanggil dari MainContent). Datanya tetap, bukan data kas.
+//  Kalau ditanya "jadwal ada di mana?", jawab: ScheduleScreen.kt sudah dibuat, tinggal ditambahkan sebagai tab bila diperlukan.
 package com.appcash.ui.screens
 
 import com.appcash.ui.theme.orangeCard
