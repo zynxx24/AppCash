@@ -183,6 +183,7 @@ fun MembersScreen(repository: AppCashRepository, isAdmin: Boolean = false) {
     }
 }
 
+// Kartu satu anggota di daftar Anggota Kelas (inisial, nama, jabatan).
 @Composable
 fun MemberCard(member: Member, index: Int, onClick: () -> Unit) {
     Box(
@@ -297,6 +298,7 @@ fun MemberBioDialog(member: Member, isAdmin: Boolean, onDismiss: () -> Unit, onE
     )
 }
 
+// Baris label dan nilai pada bio anggota.
 @Composable
 fun BioPill(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -305,6 +307,7 @@ fun BioPill(label: String, value: String) {
     }
 }
 
+// Nama lain BioPill agar kode lama tetap jalan.
 @Composable
 fun BioRow(label: String, value: String) {
     BioPill(label, value)

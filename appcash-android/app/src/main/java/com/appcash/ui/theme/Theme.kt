@@ -36,6 +36,7 @@ private val AppCashColorScheme = lightColorScheme(
     outline            = GreyBorder
 )
 
+// Mencari Activity dari Context untuk mengatur warna status bar.
 private fun Context.findActivity(): Activity? {
     var ctx = this
     while (ctx is ContextWrapper) {
@@ -45,6 +46,7 @@ private fun Context.findActivity(): Activity? {
     return null
 }
 
+// Tema warna oranye AppCash yang membungkus seluruh layar.
 @Composable
 fun AppCashTheme(content: @Composable () -> Unit) {
     val view = LocalView.current

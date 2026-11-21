@@ -192,6 +192,7 @@ fun ExpensesScreen(repository: AppCashRepository, isAdmin: Boolean) {
     }
 }
 
+// Kartu satu pengeluaran. Tombol Edit dan Hapus hanya muncul bila isAdmin.
 @Composable
 fun ExpenseItemCard(expense: Expense, isAdmin: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
     Box(

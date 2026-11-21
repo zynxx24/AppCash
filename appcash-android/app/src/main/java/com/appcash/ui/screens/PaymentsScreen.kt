@@ -62,6 +62,7 @@ import kotlinx.coroutines.launch
 // PAYMENTS SCREEN – Branched by role
 // ============================================================
 
+// Menu Kas: admin melihat layar kelola pembayaran, siswa melihat status kas miliknya.
 @Composable
 fun PaymentsScreen(repository: AppCashRepository, isAdmin: Boolean) {
     if (isAdmin) {
@@ -89,6 +90,7 @@ fun AdminPaymentsScreen(repository: AppCashRepository) {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
+    // Memuat ulang tabel pembayaran dari repository setelah ada perubahan.
     fun reload() {
         scope.launch {
             repository.getPayments().fold(
@@ -1066,6 +1068,7 @@ fun UserBniPaymentDialog(
 // SHARED COMPONENTS
 // ============================================================
 
+// Kartu satu minggu kas (M01 sampai M37): jumlah siswa lunas dan tombol Edit.
 @Composable
 fun PaymentDateCard(
     weekIndex: Int,
@@ -1124,6 +1127,7 @@ fun PaymentDateCard(
  * Limited to 20 entries (~200KB max at 200x200) to balance memory vs cache hits.
  */
 private val avatarBitmapCache = object : LinkedHashMap<String, androidx.compose.ui.graphics.ImageBitmap>(20, 0.75f, true) {
+    // Cache gambar QRIS dibatasi 20 supaya memori HP tidak penuh.
     override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, androidx.compose.ui.graphics.ImageBitmap>?): Boolean {
         return size > 20
     }
@@ -1228,6 +1232,7 @@ fun StudentAvatar(memberId: Int, size: Int = 44) {
     }
 }
 
+// Grafik batang kecil pemasukan dan pengeluaran per bulan.
 @Composable
 fun MiniBarChart(
     incomes: List<Int>,

@@ -54,6 +54,7 @@ import kotlinx.coroutines.launch
 
 // CARI-MULAI | Aplikasi dibuka dari sini: ambil repository lalu tampilkan AppRoot.
 class MainActivity : ComponentActivity() {
+    // Titik awal aplikasi: mengambil repository dari AppCashApplication lalu menampilkan layar.
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

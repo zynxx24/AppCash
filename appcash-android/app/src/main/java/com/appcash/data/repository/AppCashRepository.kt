@@ -45,6 +45,7 @@ class AppCashRepository(private val context: Context) {
     private val ADMIN_EMAIL = "admin@gmail.com"
     private val ADMIN_PASSWORD_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
 
+    // Mengubah teks (password) menjadi kode hash SHA-256 supaya password asli tidak tersimpan.
     private fun sha256(text: String): String =
         MessageDigest.getInstance("SHA-256").digest(text.toByteArray())
             .joinToString("") { "%02x".format(it) }
@@ -66,9 +67,11 @@ class AppCashRepository(private val context: Context) {
     // Sinyal perubahan data: layar memuat ulang otomatis setiap kali nilainya naik
     private val _version = MutableStateFlow(0)
     val version: StateFlow<Int> = _version.asStateFlow()
+    // Menaikkan nomor versi data supaya semua layar yang mengamati ikut memuat ulang.
     fun refresh() { _version.value++ }
 
     // CARI-SIMPAN-DATA | Menyimpan semua data ke HP (Gson -> SharedPreferences). Dipanggil setiap ada perubahan.
+    // TANYA-GURU: Data disimpan di mana? Di HP (SharedPreferences, format JSON lewat Gson). Belum online, Firebase masih rancangan.
     private fun persist() {
         _version.value++
         val snap = Snapshot(membersList, paymentRecords, expensesList, paymentHistoryList, configData, donationsList)
@@ -262,9 +265,12 @@ class AppCashRepository(private val context: Context) {
 
     // --- SESSION MANAGEMENT ---
     suspend fun getRole(): String? = currentRole
+    // true bila ada sesi login aktif (dipakai untuk melewati layar login).
     suspend fun hasToken(): Boolean = isLoggedIn
+    // id siswa yang sedang login (null bila admin).
     suspend fun getCurrentMemberId(): Int? = currentMemberId
 
+    // Menghitung (minggu lunas, minggu wajib) satu siswa, minggu dispensasi tidak dihitung wajib.
     suspend fun getPaymentStatusForMember(memberId: Int): Result<Pair<Int, Int>> = withContext(Dispatchers.IO) {
         val memberPayments = paymentRecords[memberId.toString()] ?: emptyMap()
         val dueWeeks = datesList.filterNot { isExempt(memberId, it) }
@@ -274,6 +280,8 @@ class AppCashRepository(private val context: Context) {
     }
 
     // CARI-LOGIN | role "admin" = email + password; role "user" = siswa cukup memilih nama.
+    // TANYA-GURU: Bedanya admin dan siswa? Admin login email + password (hash SHA-256), siswa cukup pilih nama.
+    // Admin bisa centang pembayaran, kelola pengeluaran, dan melihat rekap denda. Siswa hanya melihat miliknya.
     suspend fun login(role: String, email: String? = null, password: String? = null, memberId: Int? = null, @Suppress("UNUSED_PARAMETER") name: String? = null): Result<LoginResponse> = withContext(Dispatchers.IO) {
         if (role == "admin") {
             if (email?.trim()?.lowercase() == ADMIN_EMAIL && password != null && sha256(password) == ADMIN_PASSWORD_HASH) {
@@ -297,10 +305,12 @@ class AppCashRepository(private val context: Context) {
         }
     }
 
+    // Menyimpan siswa yang dipilih di layar login.
     suspend fun setMemberId(id: Int) = withContext(Dispatchers.IO) {
         currentMemberId = id
     }
 
+    // Keluar: menghapus peran dan id siswa dari sesi, lalu menyimpan ke HP.
     suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
         currentRole = null
         currentMemberId = null
@@ -383,6 +393,8 @@ class AppCashRepository(private val context: Context) {
      * Rumus denda: denda per minggu = kas x 5% x bulan_terlambat.
      * Contoh: kas Rp5.000, telat 2 bulan → 5.000 x 5% x 2 = Rp500.
      */
+    // TANYA-GURU: Bagaimana denda dihitung? Kas Rp5.000 x 5% = Rp250 x n bulan penuh terlambat, per minggu yang belum lunas.
+    // Minggu dispensasi (BI/PKL) dilewati. Contoh: 3 minggu telat 2 bulan = 3 x 250 x 2 = Rp1.500.
     private fun calculateDenda(member: Member, today: LocalDate = LocalDate.now()): DendaInfo? {
         val memberPayments = paymentRecords[member.id.toString()] ?: emptyMap()
         var total = 0
@@ -414,10 +426,12 @@ class AppCashRepository(private val context: Context) {
             configData.kasAmount * DENDA_RATE_PERCENT * ChronoUnit.MONTHS.between(due, today).toInt().coerceAtLeast(0) / 100
         }
 
+    // Rekap denda semua siswa. Hanya ditampilkan di Dashboard akun admin.
     suspend fun getDendaForAllMembers(): Result<List<DendaInfo>> = withContext(Dispatchers.IO) {
         Result.success(membersList.mapNotNull { calculateDenda(it) })
     }
 
+    // Denda satu siswa, dipakai di Profil dan kartu Status Kas Anda.
     suspend fun getDendaForMember(memberId: Int): Result<DendaInfo?> = withContext(Dispatchers.IO) {
         val member = membersList.find { it.id == memberId }
             ?: return@withContext Result.failure(Exception("Member not found"))
@@ -427,6 +441,7 @@ class AppCashRepository(private val context: Context) {
     // --- DASHBOARD ---
     // CARI-SALDO CARI-GRAFIK | Saldo = saldo awal + (jumlah centang lunas x kas) + donasi - total pengeluaran.
     //   Juga menyiapkan data grafik per bulan (pemasukan vs pengeluaran).
+    // TANYA-GURU: Dari mana saldo? saldo awal + (centang lunas x Rp5.000) + donasi - pengeluaran. Hasil data asli Rp1.389.000.
     suspend fun getDashboard(): Result<Dashboard> = withContext(Dispatchers.IO) {
         var totalPaymentsCount = 0
         datesList.forEach { date -> totalPaymentsCount += paymentRecords.values.count { it[date] == true } }
@@ -437,6 +452,7 @@ class AppCashRepository(private val context: Context) {
 
         // Grafik per bulan: pemasukan = kas + donasi, pengeluaran = sesuai tanggal transaksi
         val months = sortedMapOf<YearMonth, IntArray>()
+        // Kelompokkan pemasukan dan pengeluaran per bulan untuk grafik Dashboard.
         fun bucket(d: LocalDate?) = d?.let { months.getOrPut(YearMonth.from(it)) { IntArray(2) } }
         datesList.forEach { date ->
             bucket(parseDateLabel(date))?.let { it[0] += paymentRecords.values.count { r -> r[date] == true } * configData.kasAmount }
@@ -469,10 +485,13 @@ class AppCashRepository(private val context: Context) {
         )
     }
 
+    // Daftar donasi (ikut dihitung sebagai pemasukan).
     suspend fun getDonations(): Result<List<Donation>> = withContext(Dispatchers.IO) { Result.success(donationsList.toList()) }
 
+    // Daftar 33 siswa untuk layar Anggota dan pilihan nama di Login.
     suspend fun getMembers(): Result<List<Member>> = withContext(Dispatchers.IO) { Result.success(membersList.toList()) }
 
+    // Tabel centang lunas semua siswa per minggu (salinan, supaya layar tidak mengubah data asli).
     suspend fun getPayments(): Result<PaymentsWrapper> = withContext(Dispatchers.IO) {
         // Deep copy: UI tidak boleh mengubah map internal repository secara langsung
         Result.success(PaymentsWrapper(dates = datesList.toList(), records = paymentRecords.mapValues { it.value.toMap() }))
@@ -489,6 +508,7 @@ class AppCashRepository(private val context: Context) {
         Result.success(Unit)
     }
 
+    // Mengubah satu centang (siswa, minggu) menjadi lunas atau belum, lalu menyimpan.
     suspend fun updatePaymentStatus(memberId: Int, date: String, paid: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
         val memberMap = paymentRecords[memberId.toString()] ?: mutableMapOf()
         memberMap[date] = paid
@@ -497,6 +517,7 @@ class AppCashRepository(private val context: Context) {
         Result.success(Unit)
     }
 
+    // Daftar pengeluaran untuk layar Pengeluaran Kas.
     suspend fun getExpenses(): Result<List<Expense>> = withContext(Dispatchers.IO) { Result.success(expensesList.toList()) }
 
     // CARI-PENGELUARAN CARI-VALIDASI | Tambah pengeluaran; keterangan wajib diisi dan nominal > 0.
@@ -509,6 +530,7 @@ class AppCashRepository(private val context: Context) {
         Result.success(IdResponse(newId))
     }
 
+    // Menghapus satu pengeluaran (khusus admin), saldo otomatis naik lagi.
     suspend fun deleteExpense(id: Int): Result<Unit> = withContext(Dispatchers.IO) {
         expensesList.removeAll { it.id == id }
         persist()
@@ -542,8 +564,10 @@ class AppCashRepository(private val context: Context) {
         }
     }
 
+    // Pengaturan kas: nominal per minggu, saldo awal, saldo riil, nama kelas.
     suspend fun getConfig(): Result<Config> = withContext(Dispatchers.IO) { Result.success(configData) }
 
+    // Mengubah pengaturan kas (belum ada layarnya, nilai diatur tim di kode).
     suspend fun updateConfig(req: ConfigRequest): Result<Unit> = withContext(Dispatchers.IO) {
         configData = configData.copy(
             kasAmount       = req.kasAmount ?: configData.kasAmount,
@@ -568,6 +592,7 @@ class AppCashRepository(private val context: Context) {
         Result.success(record)
     }
 
+    // Riwayat input pembayaran manual (layar belum dipasang di menu).
     suspend fun getPaymentHistory(): Result<List<PaymentRecord>> = withContext(Dispatchers.IO) {
         Result.success(paymentHistoryList.toList())
     }

@@ -187,7 +187,7 @@ fun ProfileScreen(
                             color = OrangeDark
                         )
                         Text(
-                            "${dendaInfo!!.unpaidMonths} bulan nunggak (${dendaInfo!!.dendaPercentage.toInt()}%)",
+                            "${dendaInfo!!.unpaidMonths} bulan belum dibayar (${dendaInfo!!.dendaPercentage.toInt()}%)",
                             style = MaterialTheme.typography.bodySmall,
                             color = TextMedium
                         )
@@ -330,6 +330,7 @@ fun ProfileScreen(
     }
 }
 
+// Satu baris data diri di layar Profil.
 @Composable
 private fun ProfileInfoRow(label: String, value: String) {
     Row(
@@ -353,6 +354,7 @@ private fun ProfileInfoRow(label: String, value: String) {
     }
 }
 
+// Dialog ubah nama, no. HP, dan bio, lalu disimpan lewat updateProfile.
 @Composable
 private fun EditProfileDialog(
     profile: UserProfile,

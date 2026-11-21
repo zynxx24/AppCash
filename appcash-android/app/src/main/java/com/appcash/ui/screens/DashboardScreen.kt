@@ -56,9 +56,9 @@ import com.appcash.ui.theme.OrangePrimary
 import com.appcash.ui.theme.RedNegative
 import com.appcash.ui.theme.TextMedium
 
-// CARI-SALDO CARI-DENDA | Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda semua siswa.
+// CARI-SALDO CARI-DENDA | Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda (khusus admin).
 @Composable
-fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER") isAdmin: Boolean) {
+fun DashboardScreen(repository: AppCashRepository, isAdmin: Boolean) {
     var dashboard by remember { mutableStateOf<Dashboard?>(null) }
     var dendaList by remember { mutableStateOf<List<DendaInfo>>(emptyList()) }
     var dendaExpanded by remember { mutableStateOf(false) }
@@ -401,7 +401,9 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
                     }
 
                     // Denda Summary Card — Expandable
-                    if (dendaList.isNotEmpty()) {
+                    // CARI-DENDA | Rekap denda bernama hanya untuk admin, siswa melihat dendanya sendiri di kartu Status Kas Anda.
+                    // TANYA-GURU: Kenapa rekap denda tidak muncul di akun siswa? Supaya yang belum bayar tidak dipermalukan (sasaran menyama braya).
+                    if (isAdmin && dendaList.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Card(
                             modifier = Modifier
@@ -530,6 +532,7 @@ fun DashboardScreen(repository: AppCashRepository, @Suppress("UNUSED_PARAMETER")
     }
 }
 
+// Kotak warna kecil + tulisan untuk keterangan grafik (pemasukan/pengeluaran).
 @Composable
 fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -538,6 +541,7 @@ fun LegendDot(color: Color, label: String) {
     }
 }
 
+// Kartu angka di Dashboard (saldo, pemasukan, pengeluaran, jumlah anggota).
 @Composable
 fun DashStatCard(title: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
     Card(
@@ -684,6 +688,7 @@ fun WeeklyKasLineChart(
     }
 }
 
+// Satu baris label dan nilai di dialog rincian.
 @Composable
 fun DetailRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

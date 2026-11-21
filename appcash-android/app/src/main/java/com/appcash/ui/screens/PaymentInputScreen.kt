@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
  * displayed as YYYY-MM-DD with auto-inserted dashes.
  */
 class DateVisualTransformation : VisualTransformation {
+    // Menampilkan tanggal YYYYMMDD sebagai YYYY-MM-DD saat diketik.
     override fun filter(text: AnnotatedString): TransformedText {
         val digits = text.text
         val out = StringBuilder()
@@ -53,11 +54,13 @@ class DateVisualTransformation : VisualTransformation {
             if ((i == 3 || i == 5) && i < digits.length - 1) out.append('-')
         }
         val offsetMapping = object : OffsetMapping {
+            // Menggeser posisi kursor karena ada tanda strip tambahan.
             override fun originalToTransformed(offset: Int): Int {
                 if (offset <= 4) return offset
                 if (offset <= 6) return offset + 1
                 return offset + 2
             }
+            // Kebalikan originalToTransformed untuk posisi kursor.
             override fun transformedToOriginal(offset: Int): Int {
                 if (offset <= 4) return offset
                 if (offset <= 7) return offset - 1
@@ -368,6 +371,7 @@ fun PaymentInputScreen(repository: AppCashRepository) {
     }
 }
 
+// Kartu satu riwayat input pembayaran (layar ini belum dipasang di menu).
 @Composable
 fun PaymentHistoryCard(record: PaymentRecord) {
     Box(
