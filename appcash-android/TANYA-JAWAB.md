@@ -6,109 +6,109 @@ Persiapan menjawab pertanyaan guru. Setiap jawaban diberi letak kodenya (file:ba
 
 Kotlin dengan Jetpack Compose (Material 3) di Android Studio, build memakai Gradle. Minimal Android 8.0 (API 26).
 
-Letak: `app/build.gradle.kts:12`
+Letak: `app/build.gradle.kts:20`
 
 ### 2. Kode pertama yang jalan saat aplikasi dibuka?
 
 `MainActivity.onCreate` mengambil repository dari `AppCashApplication`, lalu menampilkan layar login atau menu utama.
 
-Letak: `app/src/main/java/com/appcash/ui/MainActivity.kt:68`
+Letak: `app/src/main/java/com/appcash/ui/MainActivity.kt:121`
 
 ### 3. Bagaimana login admin dan siswa?
 
 Admin memakai email dan password yang dicocokkan dengan hash SHA-256. Siswa cukup memilih nama.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:336`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:507`
 
 ### 4. Kenapa password admin tidak terlihat di kode?
 
 Yang disimpan hanya hash SHA-256 (fungsi `sha256`), bukan password asli.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:73`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:105`
 
 ### 5. Data disimpan di mana? Hilang tidak kalau aplikasi ditutup?
 
 Disimpan di HP memakai SharedPreferences (JSON lewat Gson) setiap ada perubahan, jadi tidak hilang. Dimuat lagi oleh `restore()`.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:104`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:154`
 
 ### 6. Kenapa belum memakai Firebase atau server?
 
 Versi sekarang offline supaya bisa dipakai tanpa sinyal. Struktur Firestore sudah dirancang di SRS Bab 9, dan `ApiService.kt` adalah rancangan API yang belum dipakai.
 
-Letak: `app/src/main/java/com/appcash/network/ApiService.kt:21`
+Letak: `app/src/main/java/com/appcash/network/ApiService.kt:33`
 
 ### 7. Rumus saldo?
 
 Saldo = saldo awal + (jumlah centang lunas x Rp5.000) + donasi - total pengeluaran. Data asli: Rp1.389.000.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:517`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:792`
 
 ### 8. Rumus denda?
 
 Rp5.000 x 5% = Rp250 dikali jumlah bulan penuh terlambat, untuk setiap minggu yang belum dibayar. Terlambat kurang dari sebulan belum didenda.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:459`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:704`
 
 ### 9. Kalau tarif denda mau diubah?
 
 Ubah konstanta persentase denda di companion object repository.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:48`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:66`
 
 ### 10. Kalau nominal kas mau diubah?
 
 Nilai `kasAmount` di konfigurasi awal (Config).
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:287`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:432`
 
 ### 11. Dispensasi BI/PKL diatur di mana?
 
 Daftar siswa dan rentang tanggal bebas kas, dicek lewat `isExempt`. Minggu itu tidak ditagih dan tidak didenda.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:279`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:420`
 
 ### 12. Bagaimana admin mencatat pembayaran?
 
 Menu Kas, Tambah Pembayaran, pilih siswa, centang minggu, Konfirmasi. Disimpan lewat `savePayments` / `updatePaymentStatus`.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:576`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:893`
 
 ### 13. Bagaimana siswa membayar?
 
 Menu Kas, Bayar Kas, pilih BNI atau QRIS, centang minggu, kirim bukti ke WA admin.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:869`
+Letak: `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1441`
 
 ### 14. Bagaimana mencatat pengeluaran dan validasinya?
 
 Admin mengisi deskripsi, jumlah, tanggal. Keterangan wajib dan nominal harus lebih dari 0.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:601`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:932`
 
 ### 15. Grafik di Dashboard datanya dari mana?
 
 Pemasukan dan pengeluaran dikelompokkan per bulan oleh fungsi `bucket` di `getDashboard`.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:529`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:814`
 
 ### 16. Kenapa siswa tidak melihat rekap denda teman?
 
 Rekap denda bernama hanya untuk admin, supaya yang belum bayar tidak dipermalukan.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:438`
+Letak: `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:737`
 
 ### 17. Bagaimana tombol WhatsApp bekerja?
 
 Membuka link wa.me dengan nomor dan pesan terisi lewat Intent ACTION_VIEW.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:288`
+Letak: `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:495`
 
 ### 18. Data 33 siswa dan kas awal dari mana?
 
 Disalin dari buku kas asli XII PPLG per 20 November 2026 (seedStatus).
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:191`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:284`
 
 ### 19. Apa itu Repository di aplikasi ini?
 
@@ -120,7 +120,7 @@ Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:4`
 
 Data class di Models.kt: Member, Expense, Donation, Config, PaymentsWrapper, dan lainnya.
 
-Letak: `app/src/main/java/com/appcash/data/model/Models.kt:20`
+Letak: `app/src/main/java/com/appcash/data/model/Models.kt:23`
 
 ### 21. Apa kekurangan aplikasi?
 
@@ -132,55 +132,55 @@ Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:4`
 
 Satu grafik di Dashboard: grafik garis dua warna (hijau pemasukan, merah pengeluaran) per bulan, fungsi `WeeklyKasLineChart`. Digambar manual pakai Canvas, tanpa library.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:614`
+Letak: `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:1024`
 
 ### 23. Data grafik dihitung di mana?
 
 `getDashboard` di repository: pemasukan per bulan = centang lunas x Rp5.000 + donasi, pengeluaran per bulan = jumlah pengeluaran bulan itu. Nama fungsinya weekly tetapi isinya per bulan.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:525`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:806`
 
 ### 24. Kenapa bulan Juni tidak ada di grafik?
 
 Juni libur, tidak ada minggu kas, donasi, maupun pengeluaran, jadi tidak ada keranjang bulannya.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:529`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:814`
 
 ### 25. Ada grafik batang?
 
 `MiniBarChart` ada di PaymentsScreen.kt tetapi tidak dipanggil dari layar mana pun. Yang tampil hanya grafik garis di Dashboard.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1281`
+Letak: `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:2122`
 
 ### 26. Kartu saldo besar ada di mana?
 
 Bagian Hero Balance Card di DashboardScreen. Angka dari `d.totalBalance`, dihitung di getDashboard.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:174`
+Letak: `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:294`
 
 ### 27. Layar bisa berubah otomatis dari mana?
 
 `repository.version` naik setiap persist(). Layar memantau nilainya lewat collectAsState dan LaunchedEffect memuat data lagi.
 
-Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:96`
+Letak: `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:143`
 
 ### 28. Alur siswa membayar bagaimana?
 
 Pilih minggu, bayar lewat BNI atau QRIS, tombol 1 Kirim Bukti ke WA Admin, lalu tombol 2 Konfirmasi (baru aktif setelah langkah 1). Konfirmasi dilakukan siswa sendiri tanpa verifikasi admin.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1092`
+Letak: `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1828`
 
 ### 29. Jadwal pelajaran ada di mana?
 
 ScheduleScreen.kt sudah dibuat tetapi belum dipasang ke bar bawah, jadi tidak tampil.
 
-Letak: `app/src/main/java/com/appcash/ui/screens/ScheduleScreen.kt:51`
+Letak: `app/src/main/java/com/appcash/ui/screens/ScheduleScreen.kt:91`
 
 ### 30. Perbedaan tampilan Admin dan Siswa?
 
 Parameter isAdmin dari AppRoot dikirim ke tiap layar. Admin: centang pembayaran, tambah pengeluaran, edit anggota, rekap denda. Siswa: status pribadi dan bayar via BNI atau QRIS.
 
-Letak: `app/src/main/java/com/appcash/ui/MainActivity.kt:125`
+Letak: `app/src/main/java/com/appcash/ui/MainActivity.kt:210`
 
 ### 31. Kenapa ada file ApiService padahal offline?
 

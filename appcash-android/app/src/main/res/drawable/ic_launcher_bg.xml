@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- » Komentar bawaan: latar ikon berupa gradasi oranye sesuai tema. -->
 <!-- Background gradasi oranye sesuai tema aplikasi -->
+<!-- » <shape> = bentuk dengan isian. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- » Gradasi: sudut 270 (atas ke bawah), warna awal oranye muda #FFB347, warna akhir oranye gelap #E55A00. -->
     <gradient android:angle="270" android:startColor="#FFB347" android:endColor="#E55A00" />
+<!-- » Tutup bentuk. -->
 </shape>

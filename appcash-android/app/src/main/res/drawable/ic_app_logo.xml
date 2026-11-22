@@ -1,24 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- » Komentar bawaan: ikon depan (foreground) berupa dompet putih + koin, ditaruh di zona aman 66dp. -->
 <!-- Foreground adaptive icon: dompet putih + koin, berada di safe zone 66dp (21..87) -->
+<!-- » <vector> = gambar vektor (garis dan bentuk, tidak buram bila diperbesar). -->
+<!-- » android:width : Lebar gambar 108dp. -->
+<!-- » android:height : Tinggi gambar 108dp. -->
+<!-- » android:viewportWidth : Lebar kanvas gambar (satuan internal) 108. -->
+<!-- » android:viewportHeight : Tinggi kanvas gambar 108. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- » Bagian: badan dompet. -->
     <!-- Badan dompet -->
+    <!-- » path = satu bentuk: -->
+    <!-- » android:fillColor : warna isi putih, -->
+    <!-- » android:pathData : garis bentuk (M = pindah, L = garis lurus, A = lengkung, Z = tutup): persegi dengan -->
+    <!-- » sudut bulat. -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M36,38 L72,38 A6,6 0 0 1 78,44 L78,70 A6,6 0 0 1 72,76 L36,76 A6,6 0 0 1 30,70 L30,44 A6,6 0 0 1 36,38 Z" />
+    <!-- » Bagian: lipatan atas dompet. -->
     <!-- Lipatan atas dompet -->
+    <!-- » path: -->
+    <!-- » android:fillColor : warna krem, -->
+    <!-- » android:pathData : bentuk lipatan miring. -->
     <path
         android:fillColor="#FFE0C2"
         android:pathData="M34,38 L64,30 A4,4 0 0 1 69,33 L70,38 Z" />
+    <!-- » Bagian: kantong pengunci. -->
     <!-- Kantong pengunci -->
+    <!-- » path: -->
+    <!-- » android:fillColor : warna oranye, -->
+    <!-- » android:pathData : bentuk kantong di sisi kanan. -->
     <path
         android:fillColor="#FF6B00"
         android:pathData="M60,50 L78,50 L78,64 L60,64 A7,7 0 0 1 60,50 Z" />
+    <!-- » Bagian: koin. -->
     <!-- Koin -->
+    <!-- » path: -->
+    <!-- » android:fillColor : warna putih, -->
+    <!-- » android:pathData : bentuk lingkaran kecil. -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M64,57 m-3.5,0 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0" />
+<!-- » Tutup gambar vektor. -->
 </vector>

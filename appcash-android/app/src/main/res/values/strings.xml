@@ -1,42 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- » <resources> = kumpulan sumber daya. strings.xml = daftar teks yang bisa dipakai di aplikasi lewat nama. -->
 <resources>
+    <!-- » Nama aplikasi (dipakai AndroidManifest): AppCash. -->
     <string name="app_name">AppCash</string>
+    <!-- » Teks judul login (sisa rancangan, tidak dipakai di tampilan sekarang). -->
     <string name="login_title">AppCash Login</string>
+    <!-- » Teks peran Admin. -->
     <string name="role_admin">Admin</string>
+    <!-- » Teks peran Siswa. -->
     <string name="role_user">Siswa</string>
+    <!-- » Teks label username. -->
     <string name="username_label">Username</string>
+    <!-- » Teks label password. -->
     <string name="password_label">Password</string>
+    <!-- » Teks label NIS / Member ID. -->
     <string name="member_id_label">NIS / Member ID</string>
+    <!-- » Teks tombol Masuk. -->
     <string name="login_button">Masuk</string>
+    <!-- » Teks tombol Keluar. -->
     <string name="logout_button">Keluar</string>
+    <!-- » Teks "Dashboard". -->
     <string name="dashboard">Dashboard</string>
+    <!-- » Teks "Anggota". -->
     <string name="members">Anggota</string>
+    <!-- » Teks "Kas". -->
     <string name="payments">Kas</string>
+    <!-- » Teks "Donasi". -->
     <string name="donations">Donasi</string>
+    <!-- » Teks "Pungutan". -->
     <string name="levies">Pungutan</string>
+    <!-- » Teks "Lainnya". -->
     <string name="more">Lainnya</string>
+    <!-- » Teks "Denda". -->
     <string name="fines">Denda</string>
+    <!-- » Teks "Pengeluaran". -->
     <string name="expenses">Pengeluaran</string>
+    <!-- » Teks "Konfigurasi". -->
     <string name="config">Konfigurasi</string>
+    <!-- » Teks "Keamanan". -->
     <string name="security">Keamanan</string>
+    <!-- » Teks "Memuat...". -->
     <string name="loading">Memuat...</string>
+    <!-- » Teks pesan error umum. -->
     <string name="error_generic">Terjadi kesalahan</string>
+    <!-- » Teks "Coba lagi". -->
     <string name="retry">Coba lagi</string>
+    <!-- » Teks "Tambah". -->
     <string name="add">Tambah</string>
+    <!-- » Teks "Hapus". -->
     <string name="delete">Hapus</string>
+    <!-- » Teks "Simpan". -->
     <string name="save">Simpan</string>
+    <!-- » Teks "Batal". -->
     <string name="cancel">Batal</string>
+    <!-- » Teks "Konfirmasi hapus?". -->
     <string name="confirm_delete">Konfirmasi hapus?</string>
+    <!-- » Teks "Ya". -->
     <string name="yes">Ya</string>
+    <!-- » Teks "Tidak". -->
     <string name="no">Tidak</string>
+    <!-- » Teks "Saldo Total". -->
     <string name="total_balance">Saldo Total</string>
+    <!-- » Teks "Iuran Kas". -->
     <string name="kas_amount">Iuran Kas</string>
+    <!-- » Teks "Total Pemasukan Kas". -->
     <string name="total_kas_income">Total Pemasukan Kas</string>
+    <!-- » Teks "Total Donasi". -->
     <string name="total_donations">Total Donasi</string>
+    <!-- » Teks "Total Denda". -->
     <string name="total_fines">Total Denda</string>
+    <!-- » Teks "Total Pengeluaran". -->
     <string name="total_expenses">Total Pengeluaran</string>
+    <!-- » Teks "Denda Belum Bayar". -->
     <string name="unpaid_fines">Denda Belum Bayar</string>
+    <!-- » Teks "Denda Lunas". -->
     <string name="paid_fines">Denda Lunas</string>
+    <!-- » Teks "Pembayar Terbaru". -->
     <string name="latest_paid">Pembayar Terbaru</string>
+    <!-- » Teks "Saldo Sebelumnya". -->
     <string name="previous_balance">Saldo Sebelumnya</string>
+<!-- » Tutup daftar teks. -->
 </resources>

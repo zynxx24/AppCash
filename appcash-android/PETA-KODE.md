@@ -41,157 +41,157 @@ Panduan mencari bagian penting kode AppCash dengan cepat. Daftar di bawah dibuat
 
 ## Jawaban singkat di kode (`TANYA-GURU`)
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:103` — Data disimpan di mana? Di HP (SharedPreferences, format JSON lewat Gson). Belum online, Firebase masih rancangan.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:334` — Bedanya admin dan siswa? Admin login email + password (hash SHA-256), siswa cukup pilih nama.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:457` — Bagaimana denda dihitung? Kas Rp5.000 x 5% = Rp250 x n bulan penuh terlambat, per minggu yang belum lunas.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:516` — Dari mana saldo? saldo awal + (centang lunas x Rp5.000) + donasi - pengeluaran. Hasil data asli Rp1.389.000.
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:437` — Kenapa rekap denda tidak muncul di akun siswa? Supaya yang belum bayar tidak dipermalukan (sasaran menyama braya).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:152` — Data disimpan di mana? Di HP (SharedPreferences, format JSON lewat Gson). Belum online, Firebase masih rancangan.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:503` — Bedanya admin dan siswa? Admin login email + password (hash SHA-256), siswa cukup pilih nama.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:700` — Bagaimana denda dihitung? Kas Rp5.000 x 5% = Rp250 x n bulan penuh terlambat, per minggu yang belum lunas.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:790` — Dari mana saldo? saldo awal + (centang lunas x Rp5.000) + donasi - pengeluaran. Hasil data asli Rp1.389.000.
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:735` — Kenapa rekap denda tidak muncul di akun siswa? Supaya yang belum bayar tidak dipermalukan (sasaran menyama braya).
 
 ## Lokasi lengkap
 
 ### `CARI-MULAI`
 
-- `app/src/main/java/com/appcash/AppCashApplication.kt:16` — Repository dibuat sekali di sini supaya data & sesi tidak hilang saat layar diputar.
-- `app/src/main/java/com/appcash/ui/MainActivity.kt:64` — Aplikasi dibuka dari sini: ambil repository lalu tampilkan AppRoot.
+- `app/src/main/java/com/appcash/AppCashApplication.kt:21` — Repository dibuat sekali di sini supaya data & sesi tidak hilang saat layar diputar.
+- `app/src/main/java/com/appcash/ui/MainActivity.kt:112` — Aplikasi dibuka dari sini: ambil repository lalu tampilkan AppRoot.
 
 ### `CARI-NAVIGASI`
 
-- `app/src/main/java/com/appcash/ui/MainActivity.kt:121` — Bottom bar + HorizontalPager. Nomor halaman: 0 Kas, 1 Pengeluaran, 2 Dashboard, 3 Anggota, 4 Profil.
-- `app/src/main/java/com/appcash/ui/MainActivity.kt:253` — Label & ikon tab untuk admin (bendahara). Versi siswa ada di bottomNavItemsUser.
+- `app/src/main/java/com/appcash/ui/MainActivity.kt:204` — Bottom bar + HorizontalPager. Nomor halaman: 0 Kas, 1 Pengeluaran, 2 Dashboard, 3 Anggota, 4 Profil.
+- `app/src/main/java/com/appcash/ui/MainActivity.kt:429` — Label & ikon tab untuk admin (bendahara). Versi siswa ada di bottomNavItemsUser.
 
 ### `CARI-LOGIN`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:65` — Akun admin: admin@gmail.com / admin123. Password disimpan sebagai hash SHA-256 di ADMIN_PASSWORD_HASH;
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:333` — role "admin" = email + password; role "user" = siswa cukup memilih nama.
-- `app/src/main/java/com/appcash/ui/MainActivity.kt:87` — Menentukan yang tampil: LoginScreen (belum login) atau MainContent (sudah login).
-- `app/src/main/java/com/appcash/ui/screens/LoginScreen.kt:41` — Tombol bawah mengganti mode Siswa <-> Email & Password; ada tombol lihat password.
-- `app/src/main/java/com/appcash/ui/screens/ProfileScreen.kt:40` — Menampilkan profil, kartu denda (siswa), tombol Edit Profil dan Logout.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:92` — Akun admin: admin@gmail.com / admin123. Password disimpan sebagai hash SHA-256 di ADMIN_PASSWORD_HASH;
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:502` — role "admin" = email + password; role "user" = siswa cukup memilih nama.
+- `app/src/main/java/com/appcash/ui/MainActivity.kt:149` — Menentukan yang tampil: LoginScreen (belum login) atau MainContent (sudah login).
+- `app/src/main/java/com/appcash/ui/screens/LoginScreen.kt:66` — Tombol bawah mengganti mode Siswa <-> Email & Password; ada tombol lihat password.
+- `app/src/main/java/com/appcash/ui/screens/ProfileScreen.kt:68` — Menampilkan profil, kartu denda (siswa), tombol Edit Profil dan Logout.
 
 ### `CARI-PUSAT-DATA`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:44` — Semua layar mengambil dan mengubah data lewat kelas ini (tanpa server).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:59` — Semua layar mengambil dan mengubah data lewat kelas ini (tanpa server).
 
 ### `CARI-DATA-AWAL`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:132` — Daftar 33 siswa XII PPLG: id, nama, NIS, jabatan, bio, umur, no. WA.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:173` — Daftar minggu kas (setiap Senin). Tambah minggu baru di akhir dengan format "M38 (02 Nov)";
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:191` — Status bayar awal dari buku kas asli: satu string per siswa, 1 = lunas, 0 = belum, urut sesuai datesList.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:230` — 24 pengeluaran asli (id, keterangan, nominal, tanggal yyyy-MM-dd, kategori).
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:303` — Mengubah seedStatus menjadi tabel pembayaran saat aplikasi pertama kali dipasang.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:201` — Daftar 33 siswa XII PPLG: id, nama, NIS, jabatan, bio, umur, no. WA.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:254` — Daftar minggu kas (setiap Senin). Tambah minggu baru di akhir dengan format "M38 (02 Nov)";
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:284` — Status bayar awal dari buku kas asli: satu string per siswa, 1 = lunas, 0 = belum, urut sesuai datesList.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:335` — 24 pengeluaran asli (id, keterangan, nominal, tanggal yyyy-MM-dd, kategori).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:456` — Mengubah seedStatus menjadi tabel pembayaran saat aplikasi pertama kali dipasang.
 
 ### `CARI-SIMPAN-DATA`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:52` — Nama kunci penyimpanan. Naikkan versinya (mis. _v3) bila data awal diganti, supaya HP memuat data baru.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:102` — Menyimpan semua data ke HP (Gson -> SharedPreferences). Dipanggil setiap ada perubahan.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:112` — Memuat data tersimpan saat aplikasi dibuka; bila kosong/rusak dipakai data awal.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:72` — Nama kunci penyimpanan. Naikkan versinya (mis. _v3) bila data awal diganti, supaya HP memuat data baru.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:151` — Menyimpan semua data ke HP (Gson -> SharedPreferences). Dipanggil setiap ada perubahan.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:166` — Memuat data tersimpan saat aplikasi dibuka; bila kosong/rusak dipakai data awal.
 
 ### `CARI-NOMINAL-KAS`
 
-- `app/src/main/java/com/appcash/data/model/Models.kt:102` — Nilai bawaan konfigurasi kas (nominal, saldo awal, saldo fisik).
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:173` — Daftar minggu kas (setiap Senin). Tambah minggu baru di akhir dengan format "M38 (02 Nov)";
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:287` — kasAmount = iuran per minggu, previousBalance = saldo awal, realBalance = uang fisik di peti kas.
+- `app/src/main/java/com/appcash/data/model/Models.kt:164` — Nilai bawaan konfigurasi kas (nominal, saldo awal, saldo fisik).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:254` — Daftar minggu kas (setiap Senin). Tambah minggu baru di akhir dengan format "M38 (02 Nov)";
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:432` — kasAmount = iuran per minggu, previousBalance = saldo awal, realBalance = uang fisik di peti kas.
 
 ### `CARI-SALDO`
 
-- `app/src/main/java/com/appcash/data/model/Models.kt:41` — Ringkasan angka untuk Dashboard dan kartu saldo.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:287` — kasAmount = iuran per minggu, previousBalance = saldo awal, realBalance = uang fisik di peti kas.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:514` — Saldo = saldo awal + (jumlah centang lunas x kas) + donasi - total pengeluaran.
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:73` — Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda (khusus admin).
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:266` — Kartu oranye berisi total kas, pemasukan (kas + donasi), dan pengeluaran.
+- `app/src/main/java/com/appcash/data/model/Models.kt:57` — Ringkasan angka untuk Dashboard dan kartu saldo.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:432` — kasAmount = iuran per minggu, previousBalance = saldo awal, realBalance = uang fisik di peti kas.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:788` — Saldo = saldo awal + (jumlah centang lunas x kas) + donasi - total pengeluaran.
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:123` — Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda (khusus admin).
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:440` — Kartu oranye berisi total kas, pemasukan (kas + donasi), dan pengeluaran.
 
 ### `CARI-DENDA`
 
-- `app/src/main/java/com/appcash/data/model/Models.kt:166` — Hasil hitung denda per siswa.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:48` — Persentase denda per bulan keterlambatan (5 = 5%). Ubah angka ini untuk mengganti tarif denda.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:451` — Rumus: kas x 5% x n untuk setiap minggu belum lunas; n = jumlah bulan penuh sejak tanggal kas.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:484` — Denda hanya untuk minggu yang dicentang saat membayar (dipakai dialog Bayar Kas).
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:73` — Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda (khusus admin).
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:436` — Rekap denda bernama hanya untuk admin, siswa melihat dendanya sendiri di kartu Status Kas Anda.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:322` — Admin memilih siswa lalu mencentang minggu yang dibayar; total = kas + denda minggu terpilih.
+- `app/src/main/java/com/appcash/data/model/Models.kt:274` — Hasil hitung denda per siswa.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:66` — Persentase denda per bulan keterlambatan (5 = 5%). Ubah angka ini untuk mengganti tarif denda.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:694` — Rumus: kas x 5% x n untuk setiap minggu belum lunas; n = jumlah bulan penuh sejak tanggal kas.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:747` — Denda hanya untuk minggu yang dicentang saat membayar (dipakai dialog Bayar Kas).
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:123` — Kartu saldo (dicocokkan dengan saldo fisik), status kas pribadi, dan rekap denda (khusus admin).
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:734` — Rekap denda bernama hanya untuk admin, siswa melihat dendanya sendiri di kartu Status Kas Anda.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:529` — Admin memilih siswa lalu mencentang minggu yang dibayar; total = kas + denda minggu terpilih.
 
 ### `CARI-DISPENSASI`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:272` — Siswa yang bebas kas pada rentang tanggal tertentu (mis. BI/PKL).
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:277` — Dipakai layar Kas & rumus denda untuk melewati minggu dispensasi.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:658` — Tampilan siswa: status kas pribadi per minggu (Lunas / Dispensasi / Belum Bayar).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:411` — Siswa yang bebas kas pada rentang tanggal tertentu (mis. BI/PKL).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:417` — Dipakai layar Kas & rumus denda untuk melewati minggu dispensasi.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1091` — Tampilan siswa: status kas pribadi per minggu (Lunas / Dispensasi / Belum Bayar).
 
 ### `CARI-DONASI`
 
-- `app/src/main/java/com/appcash/data/model/Models.kt:82` — Data satu donasi.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:259` — Donasi dihitung sebagai pemasukan di luar kas mingguan.
+- `app/src/main/java/com/appcash/data/model/Models.kt:130` — Data satu donasi.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:391` — Donasi dihitung sebagai pemasukan di luar kas mingguan.
 
 ### `CARI-PEMBAYARAN`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:191` — Status bayar awal dari buku kas asli: satu string per siswa, 1 = lunas, 0 = belum, urut sesuai datesList.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:484` — Denda hanya untuk minggu yang dicentang saat membayar (dipakai dialog Bayar Kas).
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:575` — Menyimpan centang lunas per siswa per minggu.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:93` — Tampilan admin: kartu saldo, tombol Tambah Pembayaran, daftar minggu kas.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:322` — Admin memilih siswa lalu mencentang minggu yang dibayar; total = kas + denda minggu terpilih.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:527` — Edit centang lunas semua siswa untuk satu minggu.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:658` — Tampilan siswa: status kas pribadi per minggu (Lunas / Dispensasi / Belum Bayar).
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:869` — Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:284` — Status bayar awal dari buku kas asli: satu string per siswa, 1 = lunas, 0 = belum, urut sesuai datesList.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:747` — Denda hanya untuk minggu yang dicentang saat membayar (dipakai dialog Bayar Kas).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:891` — Menyimpan centang lunas per siswa per minggu.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:154` — Tampilan admin: kartu saldo, tombol Tambah Pembayaran, daftar minggu kas.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:529` — Admin memilih siswa lalu mencentang minggu yang dibayar; total = kas + denda minggu terpilih.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:869` — Edit centang lunas semua siswa untuk satu minggu.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1091` — Tampilan siswa: status kas pribadi per minggu (Lunas / Dispensasi / Belum Bayar).
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1441` — Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
 
 ### `CARI-PENGELUARAN`
 
-- `app/src/main/java/com/appcash/data/model/Models.kt:73` — Data satu pengeluaran (tanggal format yyyy-MM-dd).
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:230` — 24 pengeluaran asli (id, keterangan, nominal, tanggal yyyy-MM-dd, kategori).
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:600` — Tambah pengeluaran; keterangan wajib diisi dan nominal > 0.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:618` — Edit pengeluaran yang sudah ada.
-- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:47` — Daftar pengeluaran urut terbaru + total di atas; tombol tambah hanya untuk admin.
-- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:261` — Form tambah: tanggal otomatis hari ini, tombol aktif hanya bila isian valid.
-- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:327` — Form edit pengeluaran.
+- `app/src/main/java/com/appcash/data/model/Models.kt:115` — Data satu pengeluaran (tanggal format yyyy-MM-dd).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:335` — 24 pengeluaran asli (id, keterangan, nominal, tanggal yyyy-MM-dd, kategori).
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:930` — Tambah pengeluaran; keterangan wajib diisi dan nominal > 0.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:959` — Edit pengeluaran yang sudah ada.
+- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:80` — Daftar pengeluaran urut terbaru + total di atas; tombol tambah hanya untuk admin.
+- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:436` — Form tambah: tanggal otomatis hari ini, tombol aktif hanya bila isian valid.
+- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:550` — Form edit pengeluaran.
 
 ### `CARI-ANGGOTA`
 
-- `app/src/main/java/com/appcash/data/model/Models.kt:61` — Data satu siswa.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:132` — Daftar 33 siswa XII PPLG: id, nama, NIS, jabatan, bio, umur, no. WA.
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:633` — Edit data siswa (khusus admin).
-- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:47` — Daftar siswa + kolom cari nama/NIS/jabatan.
-- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:235` — Detail siswa; tombol Hubungi WA mengubah nomor 08xx menjadi 628xx.
-- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:321` — Form edit siswa (khusus admin).
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1201` — Foto siswa dari res/drawable/student_<id>; bila tidak ada, tampil nomor id.
+- `app/src/main/java/com/appcash/data/model/Models.kt:94` — Data satu siswa.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:201` — Daftar 33 siswa XII PPLG: id, nama, NIS, jabatan, bio, umur, no. WA.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:985` — Edit data siswa (khusus admin).
+- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:81` — Daftar siswa + kolom cari nama/NIS/jabatan.
+- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:399` — Detail siswa; tombol Hubungi WA mengubah nomor 08xx menjadi 628xx.
+- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:544` — Form edit siswa (khusus admin).
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1999` — Foto siswa dari res/drawable/student_<id>; bila tidak ada, tampil nomor id.
 
 ### `CARI-GRAFIK`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:514` — Saldo = saldo awal + (jumlah centang lunas x kas) + donasi - total pengeluaran.
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:612` — Grafik garis pemasukan (hijau) vs pengeluaran (merah) dengan label bulan di bawah.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:788` — Saldo = saldo awal + (jumlah centang lunas x kas) + donasi - total pengeluaran.
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:1020` — Grafik garis pemasukan (hijau) vs pengeluaran (merah) dengan label bulan di bawah.
 
 ### `CARI-PROFIL`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:404` — Menyimpan perubahan nama, no. HP, dan bio siswa yang sedang login.
-- `app/src/main/java/com/appcash/ui/screens/ProfileScreen.kt:40` — Menampilkan profil, kartu denda (siswa), tombol Edit Profil dan Logout.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:623` — Menyimpan perubahan nama, no. HP, dan bio siswa yang sedang login.
+- `app/src/main/java/com/appcash/ui/screens/ProfileScreen.kt:68` — Menampilkan profil, kartu denda (siswa), tombol Edit Profil dan Logout.
 
 ### `CARI-QRIS`
 
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:869` — Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1441` — Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
 
 ### `CARI-WHATSAPP`
 
-- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:235` — Detail siswa; tombol Hubungi WA mengubah nomor 08xx menjadi 628xx.
-- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:869` — Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
+- `app/src/main/java/com/appcash/ui/screens/MembersScreen.kt:399` — Detail siswa; tombol Hubungi WA mengubah nomor 08xx menjadi 628xx.
+- `app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt:1441` — Siswa membayar via BNI/QRIS, kirim bukti ke WA admin, lalu konfirmasi.
 
 ### `CARI-VALIDASI`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:600` — Tambah pengeluaran; keterangan wajib diisi dan nominal > 0.
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:748` — Tampilan error + tombol Coba lagi yang dipakai beberapa layar.
-- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:261` — Form tambah: tanggal otomatis hari ini, tombol aktif hanya bila isian valid.
-- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:394` — Menolak tanggal yang tidak ada di kalender, mis. 2026-02-30.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:930` — Tambah pengeluaran; keterangan wajib diisi dan nominal > 0.
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:1248` — Tampilan error + tombol Coba lagi yang dipakai beberapa layar.
+- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:436` — Form tambah: tanggal otomatis hari ini, tombol aktif hanya bila isian valid.
+- `app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt:665` — Menolak tanggal yang tidak ada di kalender, mis. 2026-02-30.
 
 ### `CARI-JADWAL`
 
-- `app/src/main/java/com/appcash/ui/screens/ScheduleScreen.kt:48` — Belum dipasang di bottom bar; tambahkan di MainContent bila ingin ditampilkan.
+- `app/src/main/java/com/appcash/ui/screens/ScheduleScreen.kt:85` — Belum dipasang di bottom bar; tambahkan di MainContent bila ingin ditampilkan.
 
 ### `CARI-FORMAT-RUPIAH`
 
-- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:765` — Mengubah 1389000 menjadi "1.389.000" (tanpa "Rp").
+- `app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt:1275` — Mengubah 1389000 menjadi "1.389.000" (tanpa "Rp").
 
 ### `CARI-TEMA`
 
-- `app/src/main/java/com/appcash/ui/theme/Color.kt:13` — Warna utama aplikasi; ganti nilai hex di sini untuk mengubah tema.
+- `app/src/main/java/com/appcash/ui/theme/Color.kt:15` — Warna utama aplikasi; ganti nilai hex di sini untuk mengubah tema.
 
 ### `CARI-TIDAK-DIPAKAI`
 
-- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:663` — Untuk PaymentInputScreen yang belum dipasang di navigasi; tidak ikut dihitung di saldo.
-- `app/src/main/java/com/appcash/network/ApiService.kt:20` — Aplikasi saat ini offline; semua data berasal dari AppCashRepository.
-- `app/src/main/java/com/appcash/ui/screens/PaymentInputScreen.kt:76` — Tidak dipanggil dari navigasi; pembayaran resmi dicatat lewat PaymentsScreen.
-- `app/src/main/java/com/appcash/ui/screens/ScheduleScreen.kt:48` — Belum dipasang di bottom bar; tambahkan di MainContent bila ingin ditampilkan.
+- `app/src/main/java/com/appcash/data/repository/AppCashRepository.kt:1034` — Untuk PaymentInputScreen yang belum dipasang di navigasi; tidak ikut dihitung di saldo.
+- `app/src/main/java/com/appcash/network/ApiService.kt:30` — Aplikasi saat ini offline; semua data berasal dari AppCashRepository.
+- `app/src/main/java/com/appcash/ui/screens/PaymentInputScreen.kt:132` — Tidak dipanggil dari navigasi; pembayaran resmi dicatat lewat PaymentsScreen.
+- `app/src/main/java/com/appcash/ui/screens/ScheduleScreen.kt:85` — Belum dipasang di bottom bar; tambahkan di MainContent bila ingin ditampilkan.

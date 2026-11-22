@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- » <resources> berisi tema. -->
 <resources>
+    <!-- » Membuat tema Theme.AppCash berdasarkan tema terang bawaan Android tanpa bar judul. Dipakai -->
+    <!-- » AndroidManifest untuk aplikasi dan layar utama. -->
     <style name="Theme.AppCash" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

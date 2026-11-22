@@ -1,17 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- » <resources>: daftar warna XML. Warna yang dipakai layar sebenarnya ada di Color.kt; ini warna bawaan -->
+<!-- » proyek. -->
 <resources>
+    <!-- » Hitam (FF = tidak transparan, 000000 = hitam). -->
     <color name="black">#FF000000</color>
+    <!-- » Putih. -->
     <color name="white">#FFFFFFFF</color>
+    <!-- » Ungu utama bawaan (tidak dipakai tampilan oranye). -->
     <color name="primary">#FF6750A4</color>
+    <!-- » Ungu gelap bawaan. -->
     <color name="primary_dark">#FF4F378B</color>
+    <!-- » Warna aksen bawaan. -->
     <color name="accent">#FF625B71</color>
+    <!-- » Hijau (sukses). -->
     <color name="success">#FF4CAF50</color>
+    <!-- » Oranye (peringatan). -->
     <color name="warning">#FFFF9800</color>
+    <!-- » Merah (bahaya). -->
     <color name="danger">#FFF44336</color>
+    <!-- » Latar putih keunguan. -->
     <color name="background">#FFFFFBFE</color>
+    <!-- » Permukaan putih keunguan. -->
     <color name="surface">#FFFFFBFE</color>
+    <!-- » Warna teks di atas warna utama: putih. -->
     <color name="on_primary">#FFFFFFFF</color>
+    <!-- » Teks di atas latar: hampir hitam. -->
     <color name="on_background">#FF1C1B1F</color>
+    <!-- » Teks di atas permukaan: hampir hitam. -->
     <color name="on_surface">#FF1C1B1F</color>
+    <!-- » Warna latar ikon aplikasi: oranye #FF6B00. -->
     <color name="ic_launcher_background">#FF6B00</color>
+<!-- » Tutup daftar warna. -->
 </resources>

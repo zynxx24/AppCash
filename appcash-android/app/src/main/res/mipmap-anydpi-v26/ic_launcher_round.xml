@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- » <adaptive-icon> = ikon aplikasi adaptif yang bisa dipotong berbagai bentuk oleh HP (bulat, kotak bulat, -->
+<!-- » dll). -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- » Lapisan belakang: gradasi oranye (ic_launcher_bg). -->
     <background android:drawable="@drawable/ic_launcher_bg" />
+    <!-- » Lapisan depan: logo dompet (ic_app_logo). -->
     <foreground android:drawable="@drawable/ic_app_logo" />
+    <!-- » Lapisan monokrom: logo yang sama, dipakai untuk ikon bertema warna tunggal di Android 13+. -->
     <monochrome android:drawable="@drawable/ic_app_logo" />
+<!-- » Tutup ikon. -->
 </adaptive-icon>
