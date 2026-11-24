@@ -1,600 +1,74 @@
-# 💸 AppCash — Sistem Manajemen Kas & Keuangan Kelas XII PPLG
+# AppCash
 
-<div align="center">
+Aplikasi Android untuk mencatat kas kelas XII PPLG, SMKN 2 Kuta Selatan. Dibuat oleh Kelompok 6. Siswa masuk cukup dengan memilih nama, bendahara masuk dengan email, dan semua data tersimpan di HP.
 
-![AppCash Banner](design_new/iPhone%2017%20-%201.png)
+[![Rilis terbaru](https://img.shields.io/github/v/release/zynxx24/AppCash?label=rilis)](https://github.com/zynxx24/AppCash/releases/latest)
+![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
 
-[![Android Version](https://img.shields.io/badge/Android-8.0_%2B_%28API_26%2B%29-2EA44F?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
-[![Target SDK](https://img.shields.io/badge/Target_SDK-35_%28Android_15/16%29-0284C7?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![Jetpack Compose](https://img.shields.io/badge/Compose-BOM_2024.02.00-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![APK Footprint](https://img.shields.io/badge/APK_Size-~4.8_MB-FF6B00?style=for-the-badge&logo=googleplay&logoColor=white)](#-optimasi-build--apk-footprint)
+**[Unduh APK terbaru](https://github.com/zynxx24/AppCash/releases/latest)**
 
-**Aplikasi Android Native Modern & Offline-First untuk Pengelolaan Kas, Keuangan, serta Transaksi Digital Kelas XII PPLG (Rekayasa Perangkat Lunak).**
+<p>
+  <img src="screenshots/dashboard.webp" width="23%" alt="Dashboard dengan saldo kas dan grafik tren">
+  <img src="screenshots/kas.webp" width="23%" alt="Halaman kas dengan daftar minggu pembayaran">
+  <img src="screenshots/pengeluaran.webp" width="23%" alt="Daftar pengeluaran kas">
+  <img src="screenshots/anggota.webp" width="23%" alt="Daftar anggota kelas dengan foto dan pencarian">
+</p>
+<sub>Gambar dari desain Figma di folder <code>design_new/</code>.</sub>
 
-[Fitur Utama](#-fitur-utama-aplikasi) • [Arsitektur Sistem](#-arsitektur-sistem--pola-desain) • [Kekompleksan Kode & Highlight](#-kekompleksan-kode--highlight-teknis) • [Panduan Build](#-panduan-instalasi--build)
+## Cara kerja kas di aplikasi ini
 
-</div>
+- Kas Rp5.000 per minggu, dicatat per minggu (M01 sampai M37).
+- Denda 5% dari kas untuk setiap minggu yang belum lunas, dikali jumlah bulan penuh keterlambatan. Contoh: 3 minggu yang telat 2 bulan = 3 × Rp250 × 2 = Rp1.500. Telat kurang dari sebulan belum didenda.
+- Siswa yang sedang BI atau PKL mendapat dispensasi: minggu itu tidak wajib dan tidak didenda.
+- Siswa membayar lewat transfer BNI atau QRIS, lalu mengirim bukti ke WhatsApp bendahara. Tombol konfirmasi baru aktif setelah bukti terkirim. Bendahara yang mencentang minggu yang lunas.
 
----
+## Fitur
 
-## 📌 Ringkasan Aplikasi & Materi Utama
+Lima tab di bawah layar:
 
-**AppCash** dirancang khusus untuk memenuhi kebutuhan transparansi dan efisiensi manajemen keuangan kelas **XII PPLG**. Aplikasi ini memadukan **desain visual premium "Warm Sunset Orange & Modern Card Design"** dengan arsitektur **Offline-First & Dynamic REST API backend fallback**, memastikan aplikasi dapat digunakan tanpa hambatan jaringan di lingkungan sekolah.
-
-### 🎯 Tujuan Utama Aplikasi
-1. **Transparansi Keuangan**: Menyajikan data kas masuk, kas keluar, dan saldo riil secara real-time.
-2. **Kemudahan Pembayaran**: Menyediakan metode transfer langsung via **Bank BNI** dan **Scan QRIS** yang terhubung secara otomatis ke admin WhatsApp.
-3. **Pencatatan Otomatis & Terstruktur**: Mengeliminasi pembukuan manual dengan rekapitulasi pembayaran mingguan per siswa (M01 hingga M20).
-4. **Sistem Denda Otomatis**: Menerapkan denda 5% per bulan untuk setiap tunggakan kas mingguan guna menjaga kedisiplinan iuran kelas.
-5. **Autentikasi Berbasis Peran & Profil**: Sesi login terpisah untuk **Admin** (akses edit/full) dan **Siswa** (akses read-only) dilengkapi dengan halaman Profil pengguna dan fungsi Logout.
-6. **Performa Tinggi & Ringan**: Ukuran APK teroptimasi (**~4.8 MB**) dengan kompatibilitas dari Android 8.0 (Oreo) hingga Android 16 (One UI 8).
-
----
-
-## 🛠️ Arsitektur Sistem & Pola Desain
-
-Aplikasi ini dibangun menggunakan arsitektur **Single Activity Compose Navigation** berkonsep **Clean Architecture** sederhana:
-
-```mermaid
-graph TD
-    UI[Jetpack Compose UI Screens] --> Navigation[MainActivity HorizontalPager Navigation]
-    Navigation --> ViewModelRepo[AppCashRepository Layer]
-    
-    subgraph Repository Core
-        ViewModelRepo --> State[In-Memory Standalone DB Engine]
-        ViewModelRepo --> Retrofit[Retrofit 2.9 + OkHttp Client]
-    end
-    
-    subgraph Network & Gateways
-        Retrofit --> AuthInter[AuthInterceptor Bearer JWT]
-        Retrofit --> Server[Backend REST API Server]
-        UI --> GatewayWA[WhatsApp API Gateway]
-        UI --> GatewayBNI[BNI / QRIS Gateway]
-    end
-```
-
----
-
-## 🔥 Kekompleksan Kode & Highlight Teknis
-
-Aplikasi **AppCash** menyimpan sejumlah teknik pemrograman tingkat lanjut yang menjadikan kodenya efisien, aman, dan responsif. Berikut adalah rekapitulasi kekompleksan kode penting pada setiap komponen utama:
-
----
-
-### 1. Custom Graphic Canvas Rendering (`WeeklyKasBarChart`)
-> 📂 **File**: [`DashboardScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/DashboardScreen.kt)
-
-Untuk menyajikan grafik tren keuangan tanpa bergantung pada library pihak ketiga yang memperbesar ukuran APK, aplikasi memanfaatkan **Jetpack Compose Native Canvas Drawing Scope**.
-
-```kotlin
-@Composable
-fun WeeklyKasBarChart(
-    labels: List<String>,
-    incomes: List<Int>,
-    expenses: List<Int>,
-    modifier: Modifier = Modifier
-) {
-    // Menghitung batas maksimum skalar secara dinamis
-    val maxVal = (incomes.maxOrNull() ?: 1).coerceAtLeast(expenses.maxOrNull() ?: 1).toFloat()
-
-    Canvas(modifier = modifier) {
-        if (size.width <= 0f || size.height <= 24.dp.toPx()) return@Canvas
-        val barWidth = 14.dp.toPx()
-        val spacing = size.width / (labels.size.coerceAtLeast(1))
-        val chartHeight = size.height - 24.dp.toPx()
-
-        labels.forEachIndexed { i, _ ->
-            val xCenter = spacing * i + (spacing / 2)
-            val incomeVal = incomes.getOrElse(i) { 0 }
-            val expenseVal = expenses.getOrElse(i) { 0 }
-
-            // Kalkulasi rasio tinggi bar terhadap canvas height
-            val incomeBarHeight = ((incomeVal / maxVal) * chartHeight).coerceAtLeast(4f)
-            val expenseBarHeight = ((expenseVal / maxVal) * chartHeight).coerceAtLeast(if (expenseVal > 0) 4f else 0f)
-
-            // Canvas drawing rounded bars
-            drawRoundRect(
-                color = Color(0xFF22C55E), // Hijau Pemasukan
-                topLeft = Offset(xCenter - barWidth - 2.dp.toPx(), chartHeight - incomeBarHeight),
-                size = Size(barWidth, incomeBarHeight),
-                cornerRadius = CornerRadius(4.dp.toPx())
-            )
-
-            if (expenseVal > 0) {
-                drawRoundRect(
-                    color = Color(0xFFEF4444), // Merah Pengeluaran
-                    topLeft = Offset(xCenter + 2.dp.toPx(), chartHeight - expenseBarHeight),
-                    size = Size(barWidth, expenseBarHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx())
-                )
-            }
-        }
-    }
-}
-```
-* **Point Kompleksitas**: Kalkulasi koordinat piksel dinamis (`xCenter`, `chartHeight`), normalisasi batas skala nilai (`maxVal`), dan eksekusi instruksi gambar langsung ke GPU tanpa overhead View Hierarchy.
-
----
-
-### 2. Standardized Dual Engine Repository & Thread-Safe Coroutine Sync
-> 📂 **File**: [`AppCashRepository.kt`](appcash-android/app/src/main/java/com/appcash/data/repository/AppCashRepository.kt)
-
-Repository mengimplementasikan pola **In-Memory Standalone Data Engine** yang aman dari operasi I/O blocking dengan membungkus hasil respons dalam pembungkus fungsional Kotlin `Result<T>`.
-
-```kotlin
-suspend fun getDashboard(): Result<Dashboard> = withContext(Dispatchers.IO) {
-    var totalPaymentsCount = 0
-    var totalKasIncome = 0
-    val weeklyIncomeList = mutableListOf<Int>()
-    val weeklyExpensesList = mutableListOf<Int>()
-    val weeklyLabelsList = mutableListOf<String>()
-
-    // Algoritma Agregasi Data Pembayaran Per-Minggu
-    datesList.forEachIndexed { index, date ->
-        var weekPaid = 0
-        paymentRecords.values.forEach { m -> 
-            if (m[date] == true) { 
-                weekPaid++
-                totalPaymentsCount++ 
-            } 
-        }
-        val weekIncome = weekPaid * configData.kasAmount
-        totalKasIncome += weekIncome
-
-        if (index % 2 == 1) {
-            weeklyLabelsList.add("M${index + 1}")
-            weeklyIncomeList.add(weekIncome * 2)
-            val exp = when (index) {
-                1 -> 45000; 3 -> 195000; 7 -> 215000; 15 -> 380000; 19 -> 340000; else -> 0
-            }
-            weeklyExpensesList.add(exp)
-        }
-    }
-
-    val totalExpenseAmount = expensesList.sumOf { it.amount }
-    val netBalance = configData.previousBalance + totalKasIncome - totalExpenseAmount
-
-    Result.success(
-        Dashboard(
-            totalBalance = netBalance,
-            previousBalance = configData.previousBalance,
-            kasAmount = configData.kasAmount,
-            totalKasIncome = totalKasIncome,
-            totalPayments = totalPaymentsCount,
-            totalPaymentDates = datesList.size,
-            totalMembers = membersList.size,
-            totalExpenseAmount = totalExpenseAmount,
-            totalExpenseCount = expensesList.size,
-            latestPaid = paymentRecords.values.count { it[datesList.last()] == true },
-            weeklyLabels = weeklyLabelsList,
-            weeklyKasIncome = weeklyIncomeList,
-            weeklyExpenses = weeklyExpensesList
-        )
-    )
-}
-```
-* **Point Kompleksitas**: Agregasi matriks pembayaran `Map<String, Map<String, Boolean>>`, kalkulasi saldo bersih dinamis, serta perpindahan konteks eksekusi thread menggunakan `withContext(Dispatchers.IO)`.
-
----
-
-### 3. Dynamic HTTP Interceptor & Retrofit Service Integration
-> 📂 **File**: [`ApiService.kt`](appcash-android/app/src/main/java/com/appcash/network/ApiService.kt)
-
-Menggunakan pattern **Singleton Interceptor** untuk menyuntikkan token otentikasi Bearer JWT ke seluruh outgoing HTTP Request OkHttp secara otomatis.
-
-```kotlin
-class AuthInterceptor private constructor() : okhttp3.Interceptor {
-    private var token: String? = null
-
-    fun setToken(newToken: String?) { token = newToken }
-    fun clearToken() { token = null }
-
-    override fun intercept(chain: okhttp3.Interceptor.Chain): okhttp3.Response {
-        val original = chain.request()
-        val request = original.newBuilder()
-        val tokenToUse = token
-        if (!tokenToUse.isNullOrBlank()) {
-            request.header("Authorization", "Bearer $tokenToUse")
-        }
-        return chain.proceed(request.build())
-    }
-
-    companion object {
-        private var instance: AuthInterceptor? = null
-        fun getInstance(): AuthInterceptor {
-            if (instance == null) { instance = AuthInterceptor() }
-            return instance!!
-        }
-    }
-}
-```
-* **Point Kompleksitas**: Implementasi thread-safe Singleton, manipulasi HTTP request headers pada lapisan jaringan OkHttp, serta enkapsulasi token akses.
-
----
-
-### 4. Gestural Navigation & Elevated Floating Home Navigation Bar
-> 📂 **File**: [`MainActivity.kt`](appcash-android/app/src/main/java/com/appcash/ui/MainActivity.kt)
-
-Sistem navigasi tidak mengggunakan fragment lawas, melainkan **Compose HorizontalPager** yang disinkronisasikan secara interaktif dengan Bottom Navigation Bar.
-
-```kotlin
-val pagerState = rememberPagerState(initialPage = 2) { bottomNavItems.size }
-
-Scaffold(
-    bottomBar = {
-        Surface(shadowElevation = 8.dp, color = Color.White) {
-            Row(
-                modifier = Modifier.fillMaxWidth().height(72.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                bottomNavItems.forEachIndexed { index, screen ->
-                    val selected = pagerState.currentPage == index
-                    val isCenter = index == 2 // Center Home Floating Button
-
-                    if (isCenter) {
-                        // Tombol Utama Melayang (Elevated Center Button)
-                        Box(
-                            modifier = Modifier
-                                .offset(y = (-8).dp)
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(if (selected) OrangePrimary else OrangeContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            IconButton(onClick = { scope.launch { pagerState.animateScrollToPage(index) } }) {
-                                Icon(
-                                    imageVector = if (selected) screen.iconFilled else screen.icon,
-                                    contentDescription = screen.label,
-                                    tint = if (selected) Color.White else OrangePrimary
-                                )
-                            }
-                        }
-                    } else {
-                        // Regular Nav Item
-                        // ...
-                    }
-                }
-            }
-        }
-    }
-) { innerPadding ->
-    HorizontalPager(state = pagerState, modifier = Modifier.padding(innerPadding)) { page ->
-        when (page) {
-            0 -> PaymentsScreen(repository = repository, isAdmin = isAdmin)
-            1 -> ExpensesScreen(repository = repository, isAdmin = isAdmin)
-            2 -> DashboardScreen(repository = repository, isAdmin = isAdmin)
-            3 -> ScheduleScreen()
-            4 -> MembersScreen(repository = repository)
-        }
-    }
-}
-```
-* **Point Kompleksitas**: Sinkronisasi 2-arah antara gestur usap layar (`HorizontalPager`) dan status tab navigasi bawah, offset elevasi tombol tengah, serta animasi skroll halus via coroutine scope.
-
----
-
-### 5. Multi-Channel Transfer Engine (BNI Bank + QRIS & WA Admin Auto-Confirmation)
-> 📂 **File**: [`PaymentsScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt)
-
-Memungkinkan siswa memilih item pembayaran kas mingguan yang belum lunas, menghitung total biaya secara otomatis, menyalin nomor rekening BNI, serta membuat tautan konfirmasi WhatsApp langsung.
-
-```kotlin
-val totalAmount = selectedCount * 5000 // Rp 5.000 / minggu
-
-Button(
-    onClick = {
-        val memberName = selectedMember?.name ?: "Siswa"
-        val message = "Halo Admin Kas XII PPLG, saya $memberName telah transfer iuran kas via BNI 1892077413 sebesar Rp ${formatRupiah(totalAmount)} ($selectedCount minggu). Mohon konfirmasi."
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=6285600487433&text=${Uri.encode(message)}"))
-        try { context.startActivity(intent) } catch (e: Exception) {
-            Toast.makeText(context, "Membuka WhatsApp Admin...", Toast.LENGTH_SHORT).show()
-        }
-        isWaConfirmed = true
-    },
-    enabled = selectedCount > 0,
-    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
-) {
-    Icon(Icons.Default.Send, contentDescription = null)
-    Text("1. Kirim Bukti ke WA Admin", fontWeight = FontWeight.Bold)
-}
-```
-
----
-
-### 6. Algoritma Kalkulasi Denda 5% Per Bulan (`getDendaForMember`)
-> 📂 **File**: [`AppCashRepository.kt`](appcash-android/app/src/main/java/com/appcash/data/repository/AppCashRepository.kt)
-
-Perhitungan denda dilakukan secara otomatis berdasarkan akumulasi tunggakan kas mingguan per anggota:
-
-```kotlin
-fun getDendaForMember(memberId: Int): DendaInfo {
-    val memberKey = memberId.toString()
-    val memberRecords = paymentRecords[memberKey] ?: emptyMap()
-    val unpaidCount = datesList.count { date -> memberRecords[date] != true }
-    val unpaidKasAmount = unpaidCount * configData.kasAmount
-
-    // Denda 5% per bulan untuk tunggakan kas
-    val monthsUnpaid = (unpaidCount + 3) / 4 // Asumsi 4 minggu = 1 bulan
-    val dendaPercentage = 0.05
-    val dendaAmount = if (unpaidCount > 0) (unpaidKasAmount * dendaPercentage * monthsUnpaid).toInt() else 0
-
-    return DendaInfo(
-        memberId = memberId,
-        unpaidWeeks = unpaidCount,
-        unpaidKasAmount = unpaidKasAmount,
-        dendaAmount = dendaAmount,
-        totalDebt = unpaidKasAmount + dendaAmount
-    )
-}
-```
-* **Point Kompleksitas**: Kalkulasi proporsional tunggakan mingguan terhadap pembulatan bulan (`monthsUnpaid`), perhitungan denda 5%, serta komposisi total hutang kas.
-
----
-
-### 7. Session Auth State & Role-Based Content Guard (`AppRoot`)
-> 📂 **File**: [`MainActivity.kt`](appcash-android/app/src/main/java/com/appcash/ui/MainActivity.kt)
-
-Sistem autentikasi mengelola perpindahan layar secara reaktif antara `LoginScreen` dan `MainContent` serta membatasi hak akses role-based:
-
-```kotlin
-@Composable
-fun AppRoot(repository: AppCashRepository) {
-    var isLoggedIn by remember { mutableStateOf(repository.isLoggedIn) }
-    var currentRole by remember { mutableStateOf(repository.currentRole) }
-    val isAdmin = currentRole == "admin"
-
-    if (!isLoggedIn) {
-        LoginScreen(
-            repository = repository,
-            onLoginSuccess = { role ->
-                currentRole = role
-                isLoggedIn = true
-            }
-        )
-    } else {
-        MainContent(
-            repository = repository,
-            isAdmin = isAdmin,
-            onLogout = {
-                repository.logout()
-                isLoggedIn = false
-            }
-        )
-    }
-}
-```
-* **Point Kompleksitas**: Dynamic State-driven screen switching tanpa fragment rebuild, penanganan callback logout clean-up session, dan propagasi parameter `isAdmin` ke seluruh composable screens.
-
----
-
-### 8. Admin Management Engine: Edit Pengeluaran & Edit Anggota
-> 📂 **File**: [`AppCashRepository.kt`](appcash-android/app/src/main/java/com/appcash/data/repository/AppCashRepository.kt), [`ExpensesScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/ExpensesScreen.kt), [`MembersScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/MembersScreen.kt)
-
-Untuk memberikan kendali administratif yang fleksibel, Admin dapat memperbarui rincian transaksi pengeluaran maupun informasi profil siswa (Nama, NIS, Jabatan, Bio, No. WA):
-
-```kotlin
-// In-Memory Repository State Update
-suspend fun updateExpense(id: Int, description: String, amount: Int, date: String): Result<Unit> = withContext(Dispatchers.IO) {
-    val idx = expensesList.indexOfFirst { it.id == id }
-    if (idx >= 0) {
-        val old = expensesList[idx]
-        expensesList[idx] = old.copy(description = description, amount = amount, date = date)
-        Result.success(Unit)
-    } else Result.failure(Exception("Expense not found"))
-}
-
-suspend fun updateMember(id: Int, name: String, nis: String, role: String, bio: String, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
-    val idx = membersList.indexOfFirst { it.id == id }
-    if (idx >= 0) {
-        membersList[idx] = membersList[idx].copy(name = name, nis = nis, role = role, bio = bio, phone = phone)
-        Result.success(Unit)
-    } else Result.failure(Exception("Member not found"))
-}
-```
-
-* **Point Kompleksitas**: Dynamic item replacement pada In-Memory Standalone DB, Re-rendering State secara reaktif pada Jetpack Compose LazyColumn/LazyRow, serta dialog input modal ter-validasi khusus Admin.
-
----
-
-### 9. Optimasi Performa Scroll & Manajemen Memori Foto Profil
-> 📂 **File**: [`PaymentsScreen.kt`](appcash-android/app/src/main/java/com/appcash/ui/screens/PaymentsScreen.kt), [`MainActivity.kt`](appcash-android/app/src/main/java/com/appcash/ui/MainActivity.kt)
-
-Dengan 33 foto profil siswa yang ditampilkan berulang di berbagai layar (Dashboard, Anggota, Kas, Profil), aplikasi menerapkan **tiga lapis optimasi performa** untuk memastikan scroll tetap halus (~60fps) dan penggunaan memori tetap minimal.
-
-#### 9.1 BitmapFactory Subsampling Pipeline (`StudentAvatar`)
-
-Alih-alih menggunakan `painterResource()` yang memuat gambar utuh ke memori, aplikasi menggunakan **2-phase BitmapFactory decode**:
-
-```kotlin
-// Phase 1: Decode hanya metadata dimensi — ZERO pixel allocation
-val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-BitmapFactory.decodeResource(context.resources, resId, options)
-
-// Phase 2: Hitung inSampleSize lalu decode piksel dengan subsampling
-options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, targetPx)
-options.inJustDecodeBounds = false
-val bitmap = BitmapFactory.decodeResource(context.resources, resId, options)
-```
-
-**`calculateInSampleSize`** menghitung faktor power-of-2 optimal, sehingga gambar 200×200px yang ditampilkan dalam avatar 44dp hanya di-decode sebesar ~88×88px — mengurangi alokasi memori bitmap hingga **75%**:
-
-```kotlin
-private fun calculateInSampleSize(outWidth: Int, outHeight: Int, reqSize: Int): Int {
-    var inSampleSize = 1
-    if (outHeight > reqSize || outWidth > reqSize) {
-        val halfHeight = outHeight / 2
-        val halfWidth = outWidth / 2
-        while ((halfHeight / inSampleSize) >= reqSize && (halfWidth / inSampleSize) >= reqSize) {
-            inSampleSize *= 2 // Power-of-2 sampling: 1, 2, 4, 8...
-        }
-    }
-    return inSampleSize
-}
-```
-
-#### 9.2 LRU In-Memory Bitmap Cache
-
-Setiap `ImageBitmap` yang sudah di-decode disimpan dalam **LinkedHashMap LRU Cache** berkapasitas 20 entry. Ketika avatar yang sama diminta kembali (misalnya saat user berpindah halaman lalu kembali), bitmap diambil langsung dari cache **tanpa re-decode** dari disk:
-
-```kotlin
-private val avatarBitmapCache = object : LinkedHashMap<String, ImageBitmap>(20, 0.75f, true) {
-    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ImageBitmap>?): Boolean {
-        return size > 20 // Auto-evict bila melebihi 20 entry (~200KB)
-    }
-}
-
-// Cache key = "resId_targetPx" → sama resource + ukuran = cache hit
-val imageBitmap = remember(resId, targetPx) {
-    avatarBitmapCache.getOrPut("${resId}_$targetPx") {
-        /* ... decode pipeline ... */
-    }
-}
-```
-
-* **Point Kompleksitas**: Implementasi `accessOrder = true` pada LinkedHashMap menjadikan entry yang paling jarang diakses di-evict pertama (strategi Least Recently Used), menjaga working set tetap optimal.
-
-#### 9.3 HorizontalPager Memory Optimization (`beyondBoundsPageCount`)
-
-Pada navigasi layar utama, `HorizontalPager` dibatasi hanya meng-compose **1 halaman tetangga** (`beyondBoundsPageCount = 1`), bukan semua 5 halaman sekaligus. Dikombinasikan dengan `key(page)` untuk memastikan halaman jauh langsung di-dispose dari composition tree:
-
-```kotlin
-HorizontalPager(
-    state = pagerState,
-    beyondBoundsPageCount = 1, // Hanya pre-compose 1 tetangga
-) { page ->
-    key(page) { // Scope komposisi independen per halaman
-        when (page) { /* ... screen composables ... */ }
-    }
-}
-```
-
-* **Point Kompleksitas**: Tanpa `beyondBoundsPageCount`, Compose secara default mem-compose seluruh halaman yang mengakibatkan 5× overhead bitmap decode + layout. Dengan pembatasan ini, hanya ~3 halaman (current + 1 kiri + 1 kanan) yang aktif di memori, mengurangi peak memory usage hingga **~40%** dan mengeliminasi jank frame saat scroll gestur.
-
----
-
-## ⚡ Fitur Utama Aplikasi
-
-| Modul | Deskripsi & Kemampuan |
-| :--- | :--- |
-| **🔐 Autentikasi Sesi** | Halaman Login Tunggal Bersatu (*Single Unified Screen*). Secara default menampilkan dropdown **Pilih Nama Siswa** untuk login Siswa (read-only). Menyediakan opsi link **Masuk dengan Email & Password** (`admin@gmail.com` / `admin123`) tanpa tombol "Admin" yang mencolok. |
-| **⚠️ Denda Kas 5%/Bulan** | Otomatis menghitung denda keterlambatan **5% per bulan** dari total nominal kas yang nunggak. Ringkasan denda muncul di Dashboard & Profil. |
-| **👤 Profil & Logout** | Halaman Profil pengguna (Nama, Jabatan, NIS/Email, Telepon, Bio), fitur **Edit Profil**, kartu peringatan denda, dan tombol **Log Out**. |
-| **📊 Dashboard Keuangan** | Menampilkan Total Kas Kelas, Pemasukan, Pengeluaran, Jumlah Anggota (33 Siswa), Grafik Tren Mingguan, dan Ringkasan Denda Kas. |
-| **💳 Pembayaran Kas** | Rekapitulasi pembayaran M01–M20, Modal Transfer Bank BNI (1892077413), QRIS NMID ID1026507245623, dan opsi edit status kas bagi Admin. |
-| **💸 Pengeluaran Kas** | Pencatatan transaksi pengeluaran kas (Deskripsi, Jumlah Rp, Tanggal, Kategori), filter list dinamis, serta **Edit & Hapus Pengeluaran** (khusus Admin). |
-| **👥 Anggota XII PPLG** | Directory 33 siswa lengkap dengan NIS, Jabatan, Avatar Foto Profil Offline-Safe (BitmapFactory Subsampling + LRU Cache), Pencarian Nama/NIS, Modal Bio Siswa, serta **Edit Data Anggota** (Nama, NIS, Jabatan, Bio, No. WA khusus Admin). |
-| **⚡ Optimasi Performa** | 33 foto profil siswa ter-compress ke thumbnail 200×200px (17MB → 150KB total). BitmapFactory 2-phase decode pipeline dengan `inSampleSize` subsampling, LRU In-Memory Bitmap Cache (20 entry), dan `HorizontalPager beyondBoundsPageCount` untuk manajemen memori halaman. |
-
----
-
-## 🔒 Hak Akses Berdasarkan Peran (Role-Based Access Control)
-
-| Fitur / Halaman | Admin (`admin@gmail.com`) | User / Siswa |
-| :--- | :---: | :---: |
-| **Login Sesi & Logout** | ✅ | ✅ |
-| **Lihat Dashboard & Denda** | ✅ | ✅ |
-| **Lihat Pembayaran Kas** | ✅ | ✅ (Read-Only) |
-| **Edit Status Pembayaran Kas** | ✅ | ❌ |
-| **Lihat Pengeluaran Kas** | ✅ | ✅ (Read-Only) |
-| **Tambah / Edit / Hapus Pengeluaran** | ✅ | ❌ |
-| **Lihat Directory Anggota & Bio** | ✅ | ✅ |
-| **Edit Data Siswa / Anggota** | ✅ | ❌ |
-| **Lihat Profil & Edit Profil Sendiri** | ✅ | ✅ |
-
----
-
-## 🎨 Token Desain & Skema Warna
-
-Aplikasi ini menggunakan skema warna **Warm Sunset & Cyber Orange**:
-
-```
-Primary Orange   : #FFFF6B00  ██████████
-Light Orange     : #FFFF8C42  ██████████
-Dark Orange      : #FFE55A00  ██████████
-Orange Container : #FFF3E0    ██████████
-Green Positive   : #22C55E    ██████████
-Red Negative     : #EF4444    ██████████
-```
-
----
-
-## 🚀 Optimasi Build & APK Footprint
-
-Konfigurasi peluncuran APK pada `build.gradle.kts` memanfaatkan kompresi ProGuard dan Minifikasi Resource untuk memangkas ukuran build akhir:
-
-```kotlin
-android {
-    compileSdk = 35
-
-    defaultConfig {
-        applicationId = "com.appcash"
-        minSdk = 26
-        targetSdk = 35
-        versionCode = 3
-        versionName = "3.0.0"
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true      // Mengaktifkan R8 / ProGuard Code Shrinking
-            isShrinkResources = true    // Menghapus resource tidak terpakai
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-}
-```
-
----
-
-## 📖 Panduan Membaca Kode (untuk presentasi dan tanya jawab)
-
-| File | Isinya |
+| Tab | Isi |
 |---|---|
-| `appcash-android/PETA-LAYAR.md` | Tabel "yang terlihat di layar → file dan nomor baris" (grafik, saldo, pembayaran, denda, dll) |
-| `appcash-android/KAMUS-KODE.md` | Arti istilah Kotlin dan Compose yang muncul di kode, dengan bahasa sederhana |
-| `appcash-android/TANYA-JAWAB.md` | 31 tebakan pertanyaan beserta jawaban dan letak kodenya |
-| `appcash-android/PETA-KODE.md` | Daftar penanda `CARI-...` dan `TANYA-GURU` |
+| Kas | Bendahara: saldo, daftar 37 minggu, centang pembayaran per minggu. Siswa: status dan riwayat per minggu, dialog bayar BNI atau QRIS |
+| Pengeluaran | Daftar dan total pengeluaran. Bendahara bisa menambah, mengubah dan menghapus |
+| Dashboard | Saldo, jumlah anggota, periode, grafik kas per bulan, rekap denda (bendahara), dan pencocokan saldo buku dengan uang fisik di peti kas |
+| Anggota | 33 siswa dengan foto, kolom cari nama atau NIS, bio, tombol hubungi WhatsApp. Bendahara bisa mengubah data |
+| Profil | Data akun, kartu denda, edit profil, keluar |
 
-Setiap file `.kt` diawali blok **BACA INI DULU**, dan tiap bagian penting punya komentar penjelasan.
-Di Android Studio tekan **Ctrl+Shift+F** lalu ketik `BACA INI DULU` atau `TANYA-GURU`.
+Foto siswa dikecilkan jadi thumbnail dan dibaca dengan subsampling plus cache, supaya daftar anggota tetap lancar di HP kelas bawah.
 
----
+## Build dari source
 
-## 💻 Panduan Instalasi & Build
+Butuh JDK 11 atau lebih baru dan Android SDK 35. Proyek Android ada di folder `appcash-android/`.
 
-### Persyaratan Sistem
-* **Android Studio**: Jellyfish / Koala / Ladybug (2024.1.1+)
-* **JDK**: OpenJDK 11 atau lebih baru
-* **Gradle**: 8.4+
+```bash
+git clone https://github.com/zynxx24/AppCash.git
+cd AppCash/appcash-android
+./gradlew assembleDebug     # app/build/outputs/apk/debug/
+./gradlew assembleRelease   # dengan R8 dan shrink resource
+```
 
-### Langkah-langkah Build:
+## Isi repo
 
-1. **Clone Repository**:
-   ```bash
-   git clone https://github.com/wira/appcash.git
-   cd appcash/appcash-android
-   ```
+```
+appcash-android/   proyek Android Studio
+  app/src/main/java/com/appcash/
+    data/            Models.kt, AppCashRepository.kt (rumus saldo dan denda, simpan ke HP)
+    network/         ApiService.kt (klien Retrofit untuk server lokal)
+    ui/              MainActivity.kt (5 tab) dan screens/
+design_new/        desain Figma
+foto_siswa/        foto asli siswa untuk avatar
+AppCash.apk        APK terakhir yang dibangun
+AppCash.zip        arsip proyek
+```
 
-2. **Jalankan Gradle Build (Debug APK)**:
-   ```bash
-   ./gradlew assembleDebug
-   ```
+## Untuk presentasi
 
-3. **Jalankan Build Ter-optimasi (Release APK)**:
-   ```bash
-   ./gradlew assembleRelease
-   ```
-   *Hasil APK akan berada di directory `app/build/outputs/apk/release/app-release.apk` (Ukuran ~4.8 MB).*
+Di dalam `appcash-android/` ada empat dokumen untuk tanya jawab dengan guru:
 
----
+- [PETA-LAYAR.md](appcash-android/PETA-LAYAR.md): yang terlihat di layar, beserta file dan nomor barisnya
+- [TANYA-JAWAB.md](appcash-android/TANYA-JAWAB.md): perkiraan pertanyaan beserta jawaban dan letak kodenya
+- [KAMUS-KODE.md](appcash-android/KAMUS-KODE.md): arti istilah Kotlin dan Compose dengan bahasa sederhana
+- [PETA-KODE.md](appcash-android/PETA-KODE.md): daftar penanda `CARI-...` dan `TANYA-GURU` di kode
 
-<div align="center">
-
-**AppCash v3.0.0** • Dibuat dengan ❤️ untuk **XII PPLG**  
-*Dikembangkan oleh Gede Agus Wira Darma Putra & Tim Developer XII PPLG*
-
-</div>
+Aplikasi saudaranya: [KasTep](https://github.com/zynxx24/KasTep) (Kelompok 1) dan [KasKu](https://github.com/zynxx24/kasku) (Kelompok 8).
